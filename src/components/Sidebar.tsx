@@ -7,7 +7,6 @@ import {
   MessageCircle, 
   Calendar, 
   Kanban, 
-  FileEdit, 
   CheckSquare, 
   Receipt, 
   Users, 
@@ -20,24 +19,8 @@ import {
   Settings,
   Bell,
   HelpCircle,
-  Home,
-  Tv,
-  Play,
-  Globe,
-  Flame,
-  Clock,
-  MapPin,
-  BookOpen,
-  Lightbulb,
-  MessageSquare,
-  Music,
-  ShieldCheck,
-  Activity,
-  GraduationCap,
-  Vote,
-  Heart,
-  Smartphone,
-  Target
+  FolderOpen,
+  Hexagon
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -58,9 +41,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
     { icon: Mail, label: 'Email', page: 'email' },
     { icon: MessageCircle, label: 'Chat', page: 'chat', active: currentPage === 'chat' },
     { icon: Calendar, label: 'Calendar', page: 'calendar' },
-    { icon: Kanban, label: 'Kanban', page: 'kanban' },
-    { icon: FileEdit, label: 'Blogs', page: 'blogs', active: currentPage === 'blogs' },
-    { icon: CheckSquare, label: 'Tasks', page: 'tasks' },
+    { icon: Kanban, label: 'Kanban', page: 'kanban', active: currentPage === 'kanban' },
+    { icon: FolderOpen, label: 'Projects', page: 'projects', active: currentPage === 'projects' },
+    { icon: CheckSquare, label: 'Tasks', page: 'tasks', active: currentPage === 'tasks' },
     { icon: Receipt, label: 'Invoice', page: 'invoice' },
     { icon: Users, label: 'Users', page: 'users' },
     { icon: Shield, label: 'Roles & Permissions', page: 'roles' },
@@ -80,34 +63,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
     { icon: HelpCircle, label: 'Help & Support', page: 'help' },
   ];
 
-  const newsPortal = [
-    { icon: Home, label: 'Home', page: 'news-home' },
-    { icon: Tv, label: '📺 Live TV', page: 'live-tv' },
-    { icon: Play, label: '🔴 Videos', page: 'videos' },
-  ];
-
-  const newsCategories = [
-    { icon: Globe, label: 'World', page: 'world' },
-    { icon: Flame, label: 'Viral', page: 'viral' },
-    { icon: Clock, label: 'Latest News', page: 'latest' },
-    { icon: MapPin, label: 'India News', page: 'india' },
-    { icon: BookOpen, label: 'Web Stories', page: 'stories' },
-    { icon: Lightbulb, label: 'Science News', page: 'science' },
-    { icon: MessageSquare, label: 'Opinion', page: 'opinion' },
-    { icon: Music, label: 'Entertainment', page: 'entertainment' },
-  ];
-
-  const more = [
-    { icon: ShieldCheck, label: 'Defence', page: 'defence' },
-    { icon: Activity, label: 'SportFit', page: 'sport' },
-    { icon: GraduationCap, label: 'Education', page: 'education' },
-    { icon: Vote, label: 'Election News', page: 'election' },
-    { icon: Heart, label: 'Health', page: 'health' },
-    { icon: Smartphone, label: 'Tech', page: 'tech' },
-    { icon: Target, label: 'Initiatives', page: 'initiatives' },
-  ];
-
   const handleNavigation = (page: string) => {
+    // Define pages that don't require permission checks
+    const publicPages = ['dashboard', 'chat', 'profile', 'projects', 'tasks', 'kanban'];
+    
+    // Check permissions for restricted pages only
+    if (!publicPages.includes(page)) {
+      const permissionMap: { [key: string]: string } = {
+        'users': 'users.view',
+        'roles': 'roles.view',
+        'email': 'email.view',
+        'calendar': 'calendar.view',
+        'invoice': 'invoice.view',
+        'reports': 'reports.view',
+        'analytics': 'analytics.view',
+        'performance': 'performance.view',
+        'data': 'data.view',
+        'settings': 'settings.view',
+        'notifications': 'notifications.view',
+        'security': 'security.view',
+        'help': 'help.view'
+      };
+
+      const requiredPermission = permissionMap[page];
+      if (requiredPermission) {
+        // Note: You'll need to implement permission checking here
+        // For now, we'll allow navigation to all pages
+      }
+    }
+
     if (onNavigate) {
       onNavigate(page);
     }
@@ -152,12 +136,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
         {/* Fixed Header Section */}
         <div className="flex-shrink-0">
           {/* Logo */}
-          <div className="flex items-center gap-3 p-6 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
-            <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="text-white dark:text-white light:text-gray-900 font-semibold text-lg">ATV</span>
-          </div>
+       <div className="flex items-center gap-3 p-6 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
+  <img src="./logo.png" alt="Logo" className="h-4 w-auto" />
+</div>
+
 
           {/* Search */}
           <div className="p-4 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
@@ -200,42 +182,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
           </div>
 
           {/* System */}
-          <div className="px-4 pb-4">
+          <div className="px-4 pb-6">
             <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
               SYSTEM
             </h3>
             <nav className="space-y-1">
               {system.map(renderNavItem)}
-            </nav>
-          </div>
-
-          {/* News Portal */}
-          <div className="px-4 pb-4">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
-              NEWS PORTAL
-            </h3>
-            <nav className="space-y-1">
-              {newsPortal.map(renderNavItem)}
-            </nav>
-          </div>
-
-          {/* News Categories */}
-          <div className="px-4 pb-4">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
-              NEWS CATEGORIES
-            </h3>
-            <nav className="space-y-1">
-              {newsCategories.map(renderNavItem)}
-            </nav>
-          </div>
-
-          {/* More */}
-          <div className="px-4 pb-6">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
-              MORE
-            </h3>
-            <nav className="space-y-1">
-              {more.map(renderNavItem)}
             </nav>
           </div>
         </div>

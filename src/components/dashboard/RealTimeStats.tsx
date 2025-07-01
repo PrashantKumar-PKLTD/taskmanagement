@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   Users, 
-  FileText, 
   Shield, 
   Activity, 
   TrendingUp, 
@@ -49,7 +48,7 @@ const RealTimeStats: React.FC = () => {
   if (!stats) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[...Array(8)].map((_, i) => (
+        {[...Array(6)].map((_, i) => (
           <div key={i} className="bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl p-6 border border-slate-700 dark:border-slate-700 light:border-gray-200 animate-pulse">
             <div className="h-4 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded mb-2"></div>
             <div className="h-8 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded mb-2"></div>
@@ -111,58 +110,6 @@ const RealTimeStats: React.FC = () => {
           </div>
         </div>
 
-        {/* Total Blogs */}
-        <div className="bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl p-6 border border-slate-700 dark:border-slate-700 light:border-gray-200 light:shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-sm">Total Blogs</p>
-              <p className="text-2xl font-bold text-white dark:text-white light:text-gray-900">{stats.totalBlogs.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-green-400" />
-                <span className="text-green-400 text-xs">+5% this week</span>
-              </div>
-            </div>
-            <div className="p-3 bg-purple-500/10 rounded-lg">
-              <FileText className="w-6 h-6 text-purple-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Published Blogs */}
-        <div className="bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl p-6 border border-slate-700 dark:border-slate-700 light:border-gray-200 light:shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-sm">Published Blogs</p>
-              <p className="text-2xl font-bold text-white dark:text-white light:text-gray-900">{stats.publishedBlogs.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-xs">
-                  {Math.round((stats.publishedBlogs / stats.totalBlogs) * 100)}% of total
-                </span>
-              </div>
-            </div>
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Blogs */}
-        <div className="bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl p-6 border border-slate-700 dark:border-slate-700 light:border-gray-200 light:shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-sm">Pending Review</p>
-              <p className="text-2xl font-bold text-white dark:text-white light:text-gray-900">{stats.pendingBlogs.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <Clock className="w-3 h-3 text-yellow-400" />
-                <span className="text-yellow-400 text-xs">Needs attention</span>
-              </div>
-            </div>
-            <div className="p-3 bg-yellow-500/10 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-400" />
-            </div>
-          </div>
-        </div>
-
         {/* System Health */}
         <div className="bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl p-6 border border-slate-700 dark:border-slate-700 light:border-gray-200 light:shadow-sm">
           <div className="flex items-center justify-between">
@@ -211,6 +158,23 @@ const RealTimeStats: React.FC = () => {
             </div>
             <div className="p-3 bg-orange-500/10 rounded-lg">
               <Shield className="w-6 h-6 text-orange-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Projects */}
+        <div className="bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl p-6 border border-slate-700 dark:border-slate-700 light:border-gray-200 light:shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-sm">Active Projects</p>
+              <p className="text-2xl font-bold text-white dark:text-white light:text-gray-900">12</p>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp className="w-3 h-3 text-green-400" />
+                <span className="text-green-400 text-xs">+2 this week</span>
+              </div>
+            </div>
+            <div className="p-3 bg-purple-500/10 rounded-lg">
+              <Activity className="w-6 h-6 text-purple-400" />
             </div>
           </div>
         </div>

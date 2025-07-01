@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import { useUserStore } from '../../store/userStore';
 import { useProfileStore } from '../../store/profileStore';
-import ImageUpload from '../blog/ImageUpload';
 
 interface ProfileManagementProps {
   onBack: () => void;
@@ -261,10 +260,30 @@ const ProfileManagement: React.FC<ProfileManagementProps> = ({ onBack }) => {
                     </div>
                   )}
                   <div className="absolute bottom-0 right-0">
-                    <ImageUpload
-                      onImageSelect={handleAvatarUpload}
-                      currentImage={(currentUser as any).avatar}
-                    />
+                    <button
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            // Simple file handling - in production you'd upload to a server
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              const result = e.target?.result as string;
+                              handleAvatarUpload(result);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        };
+                        input.click();
+                      }}
+                      className="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-full border-2 border-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+                      title="Change avatar"
+                    >
+                      <Camera className="w-4 h-4 text-slate-300" />
+                    </button>
                   </div>
                 </div>
                 <h3 className="text-lg font-semibold text-white">{currentUser.name}</h3>

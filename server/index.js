@@ -8,7 +8,8 @@ import connectDB from './config/database.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import roleRoutes from './routes/roles.js';
-import blogRoutes from './routes/blogs.js';
+import projectRoutes from './routes/projects.js';
+import taskRoutes from './routes/tasks.js';
 import permissionRoutes from './routes/permissions.js';
 import uploadRoutes from './routes/upload.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -21,7 +22,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors({
@@ -47,7 +48,8 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/blogs', blogRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/tasks', taskRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/upload', uploadRoutes);
 

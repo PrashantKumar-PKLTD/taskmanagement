@@ -1,4 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api';
+
+
+
+
+
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -15,6 +20,9 @@ export const API_ENDPOINTS = {
     AVATAR: `${API_BASE_URL}/auth/avatar`,
   },
   
+
+
+
   // Users
   USERS: {
     BASE: `${API_BASE_URL}/users`,
@@ -22,18 +30,28 @@ export const API_ENDPOINTS = {
     TOGGLE_STATUS: (id: string) => `${API_BASE_URL}/users/${id}/toggle-status`,
   },
   
+
+  
   // Roles
   ROLES: {
     BASE: `${API_BASE_URL}/roles`,
     BY_ID: (id: string) => `${API_BASE_URL}/roles/${id}`,
   },
   
-  // Blogs
-  BLOGS: {
-    BASE: `${API_BASE_URL}/blogs`,
-    BY_ID: (id: string) => `${API_BASE_URL}/blogs/${id}`,
-    PUBLISH: (id: string) => `${API_BASE_URL}/blogs/${id}/publish`,
-    REJECT: (id: string) => `${API_BASE_URL}/blogs/${id}/reject`,
+  // Projects
+  PROJECTS: {
+    BASE: `${API_BASE_URL}/projects`,
+    BY_ID: (id: string) => `${API_BASE_URL}/projects/${id}`,
+    ASSIGN: (id: string) => `${API_BASE_URL}/projects/${id}/assign`,
+  },
+  
+  // Tasks
+  TASKS: {
+    BASE: `${API_BASE_URL}/tasks`,
+    BY_ID: (id: string) => `${API_BASE_URL}/tasks/${id}`,
+    STATUS: (id: string) => `${API_BASE_URL}/tasks/${id}/status`,
+    TIME: (id: string) => `${API_BASE_URL}/tasks/${id}/time`,
+    COMMENT: (id: string) => `${API_BASE_URL}/tasks/${id}/comment`,
   },
   
   // Permissions

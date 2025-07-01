@@ -4,10 +4,6 @@ import { API_ENDPOINTS, apiRequest } from '../config/api';
 interface DashboardStats {
   totalUsers: number;
   activeUsers: number;
-  totalBlogs: number;
-  publishedBlogs: number;
-  pendingBlogs: number;
-  draftBlogs: number;
   totalRoles: number;
   recentLogins: number;
   systemHealth: 'healthy' | 'warning' | 'critical';
@@ -16,7 +12,7 @@ interface DashboardStats {
 
 interface RecentActivity {
   id: string;
-  type: 'user_login' | 'user_created' | 'blog_created' | 'blog_published' | 'role_created' | 'password_changed' | 'profile_updated';
+  type: 'user_login' | 'user_created' | 'role_created' | 'password_changed' | 'profile_updated';
   user: {
     id: string;
     name: string;
@@ -57,10 +53,6 @@ interface DashboardStore {
 const generateMockStats = (): DashboardStats => ({
   totalUsers: Math.floor(Math.random() * 1000) + 500,
   activeUsers: Math.floor(Math.random() * 200) + 50,
-  totalBlogs: Math.floor(Math.random() * 500) + 100,
-  publishedBlogs: Math.floor(Math.random() * 300) + 50,
-  pendingBlogs: Math.floor(Math.random() * 20) + 5,
-  draftBlogs: Math.floor(Math.random() * 50) + 10,
   totalRoles: Math.floor(Math.random() * 10) + 5,
   recentLogins: Math.floor(Math.random() * 50) + 10,
   systemHealth: ['healthy', 'warning', 'critical'][Math.floor(Math.random() * 3)] as any,
@@ -69,7 +61,7 @@ const generateMockStats = (): DashboardStats => ({
 
 const generateMockActivities = (): RecentActivity[] => {
   const activities = [
-    'user_login', 'user_created', 'blog_created', 'blog_published', 'role_created', 'password_changed', 'profile_updated'
+    'user_login', 'user_created', 'role_created', 'password_changed', 'profile_updated'
   ];
   
   const users = [
@@ -82,8 +74,6 @@ const generateMockActivities = (): RecentActivity[] => {
   const descriptions = {
     user_login: 'Logged into the system',
     user_created: 'Created a new user account',
-    blog_created: 'Created a new blog post',
-    blog_published: 'Published a blog post',
     role_created: 'Created a new role',
     password_changed: 'Changed account password',
     profile_updated: 'Updated profile information'
@@ -100,7 +90,7 @@ const generateMockActivities = (): RecentActivity[] => {
       user,
       description: descriptions[type],
       timestamp,
-      metadata: type === 'blog_created' ? { title: `Blog Post ${i + 1}` } : undefined
+      metadata: undefined
     };
   }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
@@ -130,10 +120,9 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       // In a real application, this would fetch from your API
       // For now, we'll use mock data and also try to fetch real data
       
-      const [mockStats, realUsers, realBlogs, realRoles] = await Promise.allSettled([
+      const [mockStats, realUsers, realRoles] = await Promise.allSettled([
         Promise.resolve(generateMockStats()),
         apiRequest(API_ENDPOINTS.USERS.BASE).catch(() => ({ users: [] })),
-        apiRequest(API_ENDPOINTS.BLOGS.BASE).catch(() => ({ blogs: [] })),
         apiRequest(API_ENDPOINTS.ROLES.BASE).catch(() => [])
       ]);
 
@@ -144,14 +133,6 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         const users = realUsers.value.users || realUsers.value;
         stats.totalUsers = users.length;
         stats.activeUsers = users.filter((u: any) => u.status === 'active').length;
-      }
-      
-      if (realBlogs.status === 'fulfilled') {
-        const blogs = realBlogs.value.blogs || realBlogs.value;
-        stats.totalBlogs = blogs.length;
-        stats.publishedBlogs = blogs.filter((b: any) => b.status === 'published').length;
-        stats.pendingBlogs = blogs.filter((b: any) => b.status === 'pending').length;
-        stats.draftBlogs = blogs.filter((b: any) => b.status === 'draft').length;
       }
       
       if (realRoles.status === 'fulfilled') {

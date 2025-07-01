@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe, TrendingUp, DollarSign, Users, MoreHorizontal, LogOut } from 'lucide-react';
 import Sidebar from './components/Sidebar';
-import BlogManagement from './components/blog/BlogManagement';
 import UserManagement from './components/users/UserManagement';
 import RoleManagement from './components/roles/RoleManagement';
+import ProjectManagement from './components/projects/ProjectManagement';
+import TaskManagement from './components/tasks/TaskManagement';
+import KanbanBoard from './components/kanban/KanbanBoard';
 import ChatSystem from './components/chat/ChatSystem';
 import LoginForm from './components/auth/LoginForm';
 import ProfileDropdown from './components/profile/ProfileDropdown';
 import ProfileManagement from './components/profile/ProfileManagement';
-import RealTimeStats from './components/dashboard/RealTimeStats';
-import RecentActivity from './components/dashboard/RecentActivity';
-import LiveChart from './components/dashboard/LiveChart';
+import ModernDashboard from './components/dashboard/ModernDashboard';
 import { useUserStore } from './store/userStore';
-import { useBlogStore } from './store/blogStore';
 import { useProfileStore } from './store/profileStore';
 import { useDashboardStore } from './store/dashboardStore';
 
@@ -21,7 +20,6 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   
   const { currentUser, isAuthenticated, logout, hasPermission, checkAuth } = useUserStore();
-  const { setCurrentUser } = useBlogStore();
   const { preferences, initializePreferences } = useProfileStore();
   const { startRealTimeUpdates, stopRealTimeUpdates } = useDashboardStore();
 
@@ -36,13 +34,6 @@ function App() {
       initializePreferences((currentUser as any).preferences);
     }
   }, [currentUser, initializePreferences]);
-
-  // Sync current user with blog store
-  useEffect(() => {
-    if (currentUser) {
-      setCurrentUser(currentUser);
-    }
-  }, [currentUser, setCurrentUser]);
 
   // Apply theme to document
   useEffect(() => {
@@ -77,18 +68,15 @@ function App() {
 
   const handleNavigation = (page: string) => {
     // Define pages that don't require permission checks
-    const publicPages = ['dashboard', 'chat', 'profile'];
+    const publicPages = ['dashboard', 'chat', 'profile', 'projects', 'tasks', 'kanban'];
     
     // Check permissions for restricted pages only
     if (!publicPages.includes(page)) {
       const permissionMap: { [key: string]: string } = {
-        'blogs': 'blogs.view',
         'users': 'users.view',
         'roles': 'roles.view',
         'email': 'email.view',
         'calendar': 'calendar.view',
-        'kanban': 'kanban.view',
-        'tasks': 'tasks.view',
         'invoice': 'invoice.view',
         'reports': 'reports.view',
         'analytics': 'analytics.view',
@@ -141,36 +129,23 @@ function App() {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'blogs':
-        return <BlogManagement />;
       case 'users':
         return <UserManagement />;
       case 'roles':
         return <RoleManagement />;
+      case 'projects':
+        return <ProjectManagement />;
+      case 'tasks':
+        return <TaskManagement />;
+      case 'kanban':
+        return <KanbanBoard />;
       case 'chat':
         return <ChatSystem />;
       case 'profile':
         return <ProfileManagement onBack={() => setCurrentPage('dashboard')} />;
       case 'dashboard':
       default:
-        return (
-          <div className="p-6">
-            {/* Real-time Stats */}
-            <RealTimeStats />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-              {/* Live Chart - Spans 2 columns */}
-              <div className="lg:col-span-2">
-                <LiveChart />
-              </div>
-              
-              {/* Recent Activity */}
-              <div className="lg:col-span-1">
-                <RecentActivity />
-              </div>
-            </div>
-          </div>
-        );
+        return <ModernDashboard />;
     }
   };
 
@@ -205,6 +180,9 @@ function App() {
                 {currentPage === 'dashboard' ? 'Dashboard' : 
                  currentPage === 'profile' ? 'Profile Management' :
                  currentPage === 'chat' ? 'Messages' :
+                 currentPage === 'projects' ? 'Project Management' :
+                 currentPage === 'tasks' ? 'Task Management' :
+                 currentPage === 'kanban' ? 'Kanban Board' :
                  currentPage.replace('-', ' ')}
               </h1>
             </div>
@@ -218,8 +196,14 @@ function App() {
           </div>
         </header>
 
-        {/* Main Content - Scrollable */}
-        <main className={`flex-1 overflow-hidden bg-slate-900 dark:bg-slate-900 light:bg-gray-50 ${currentPage === 'chat' ? '' : 'overflow-y-auto hide-scrollbar'}`}>
+        {/* Main Content - Scrollable for most pages, special handling for chat/kanban/dashboard */}
+        <main className={`flex-1 bg-slate-900 dark:bg-slate-900 light:bg-gray-50 ${
+          currentPage === 'chat' || currentPage === 'kanban' 
+            ? 'overflow-hidden' 
+            : currentPage === 'dashboard'
+            ? 'overflow-y-auto hide-scrollbar'
+            : 'overflow-y-auto hide-scrollbar'
+        }`}>
           {renderCurrentPage()}
         </main>
       </div>

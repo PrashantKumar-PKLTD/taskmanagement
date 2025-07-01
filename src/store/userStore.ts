@@ -68,6 +68,14 @@ interface UserStore extends AuthState {
   fetchPermissions: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
   getUserRole: (userId: string) => Role | null;
+  
+  // User assignment helpers
+  getActiveUsers: () => User[];
+  isAdmin: () => boolean;
+  canCreateProjects: () => boolean;
+  canCreateTasks: () => boolean;
+  canManageProjects: () => boolean;
+  canAssignTasks: () => boolean;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -110,6 +118,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       // Fetch additional data
       await get().fetchRoles();
       await get().fetchPermissions();
+      await get().fetchUsers(); // Fetch all users for assignment
       
       return true;
     } catch (error: any) {
@@ -158,6 +167,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       // Fetch additional data
       await get().fetchRoles();
       await get().fetchPermissions();
+      await get().fetchUsers(); // Fetch all users for assignment
     } catch (error) {
       removeAuthToken();
       set({ 
@@ -386,5 +396,44 @@ export const useUserStore = create<UserStore>((set, get) => ({
     return roles.find(role => 
       role._id === user.roleId || role.id === user.roleId
     ) || null;
+  },
+
+  // Helper methods for user assignment
+  getActiveUsers: () => {
+    const { users } = get();
+    return users.filter(user => user.status === 'active');
+  },
+
+  isAdmin: () => {
+    const { currentUser } = get();
+    return currentUser?.role === 'Super Admin' || currentUser?.role === 'Admin';
+  },
+
+  canCreateProjects: () => {
+    const { currentUser } = get();
+    return currentUser?.role === 'Super Admin' || 
+           currentUser?.role === 'Admin' || 
+           currentUser?.role === 'Project Manager';
+  },
+
+  canCreateTasks: () => {
+    const { currentUser } = get();
+    return currentUser?.role === 'Super Admin' || 
+           currentUser?.role === 'Admin' || 
+           currentUser?.role === 'Project Manager';
+  },
+
+  canManageProjects: () => {
+    const { currentUser } = get();
+    return currentUser?.role === 'Super Admin' || 
+           currentUser?.role === 'Admin' || 
+           currentUser?.role === 'Project Manager';
+  },
+
+  canAssignTasks: () => {
+    const { currentUser } = get();
+    return currentUser?.role === 'Super Admin' || 
+           currentUser?.role === 'Admin' || 
+           currentUser?.role === 'Project Manager';
   }
 }));

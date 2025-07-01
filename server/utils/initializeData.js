@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import Role from '../models/Role.js';
 import Permission from '../models/Permission.js';
 
-// Default permissions
+// Default permissions (removed blog-related permissions, added project/task permissions)
 const defaultPermissions = [
   // Dashboard
   { id: 'dashboard.view', name: 'View Dashboard', description: 'Access to main dashboard', category: 'Dashboard' },
@@ -12,12 +12,16 @@ const defaultPermissions = [
   { id: 'chat.view', name: 'View Chat', description: 'Access to chat section', category: 'Apps & Pages' },
   { id: 'calendar.view', name: 'View Calendar', description: 'Access to calendar section', category: 'Apps & Pages' },
   { id: 'kanban.view', name: 'View Kanban', description: 'Access to kanban section', category: 'Apps & Pages' },
-  { id: 'blogs.view', name: 'View Blogs', description: 'Access to blog section', category: 'Apps & Pages' },
-  { id: 'blogs.create', name: 'Create Blogs', description: 'Create new blog posts', category: 'Apps & Pages' },
-  { id: 'blogs.edit', name: 'Edit Blogs', description: 'Edit existing blog posts', category: 'Apps & Pages' },
-  { id: 'blogs.delete', name: 'Delete Blogs', description: 'Delete blog posts', category: 'Apps & Pages' },
-  { id: 'blogs.publish', name: 'Publish Blogs', description: 'Publish blog posts', category: 'Apps & Pages' },
+  { id: 'projects.view', name: 'View Projects', description: 'Access to projects section', category: 'Apps & Pages' },
+  { id: 'projects.create', name: 'Create Projects', description: 'Create new projects', category: 'Apps & Pages' },
+  { id: 'projects.edit', name: 'Edit Projects', description: 'Edit existing projects', category: 'Apps & Pages' },
+  { id: 'projects.delete', name: 'Delete Projects', description: 'Delete projects', category: 'Apps & Pages' },
+  { id: 'projects.manage', name: 'Manage Projects', description: 'Full project management access', category: 'Apps & Pages' },
   { id: 'tasks.view', name: 'View Tasks', description: 'Access to tasks section', category: 'Apps & Pages' },
+  { id: 'tasks.create', name: 'Create Tasks', description: 'Create new tasks', category: 'Apps & Pages' },
+  { id: 'tasks.edit', name: 'Edit Tasks', description: 'Edit existing tasks', category: 'Apps & Pages' },
+  { id: 'tasks.delete', name: 'Delete Tasks', description: 'Delete tasks', category: 'Apps & Pages' },
+  { id: 'tasks.assign', name: 'Assign Tasks', description: 'Assign tasks to users', category: 'Apps & Pages' },
   { id: 'invoice.view', name: 'View Invoice', description: 'Access to invoice section', category: 'Apps & Pages' },
   { id: 'users.view', name: 'View Users', description: 'Access to user management', category: 'Apps & Pages' },
   { id: 'users.create', name: 'Create Users', description: 'Create new users', category: 'Apps & Pages' },
@@ -43,7 +47,7 @@ const defaultPermissions = [
   { id: 'news.manage', name: 'Manage News', description: 'Manage news content', category: 'News Portal' },
 ];
 
-// Default roles
+// Default roles (removed blog-related permissions, added project/task permissions)
 const defaultRoles = [
   {
     name: 'Super Admin',
@@ -55,26 +59,28 @@ const defaultRoles = [
     name: 'Admin',
     description: 'Administrative access with user management',
     permissions: [
-      'dashboard.view', 'blogs.view', 'blogs.create', 'blogs.edit', 'blogs.delete', 'blogs.publish',
+      'dashboard.view', 'projects.view', 'projects.create', 'projects.edit', 'projects.delete', 'projects.manage',
+      'tasks.view', 'tasks.create', 'tasks.edit', 'tasks.delete', 'tasks.assign',
       'users.view', 'users.create', 'users.edit', 'roles.view', 'reports.view', 'analytics.view',
       'settings.view', 'notifications.view'
     ],
     isDefault: true
   },
   {
-    name: 'Editor',
-    description: 'Content management and editing capabilities',
+    name: 'Project Manager',
+    description: 'Project and task management capabilities',
     permissions: [
-      'dashboard.view', 'blogs.view', 'blogs.create', 'blogs.edit',
-      'reports.view', 'news.view', 'news.manage'
+      'dashboard.view', 'projects.view', 'projects.create', 'projects.edit', 'projects.manage',
+      'tasks.view', 'tasks.create', 'tasks.edit', 'tasks.assign',
+      'reports.view', 'users.view'
     ],
     isDefault: true
   },
   {
-    name: 'Author',
-    description: 'Basic content creation capabilities',
+    name: 'Team Member',
+    description: 'Basic project and task access',
     permissions: [
-      'dashboard.view', 'blogs.view', 'blogs.create'
+      'dashboard.view', 'projects.view', 'tasks.view', 'tasks.edit'
     ],
     isDefault: true
   },
@@ -82,7 +88,7 @@ const defaultRoles = [
     name: 'Viewer',
     description: 'Read-only access to content',
     permissions: [
-      'dashboard.view', 'blogs.view', 'reports.view'
+      'dashboard.view', 'projects.view', 'tasks.view', 'reports.view'
     ],
     isDefault: true
   }
