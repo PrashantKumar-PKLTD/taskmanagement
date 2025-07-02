@@ -78,18 +78,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
       active: currentPage === 'dashboard',
       visible: isMenuItemVisible('dashboard')
     },
-    { 
-      icon: Layers, 
-      label: 'Layouts', 
-      page: 'layouts',
-      visible: isMenuItemVisible('layouts')
-    },
-    { 
-      icon: FileText, 
-      label: 'Front Pages', 
-      page: 'front-pages',
-      visible: isMenuItemVisible('front-pages')
-    },
   ].filter(item => item.visible);
 
   const appsPages = [
@@ -286,30 +274,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
             {/* Modern Logo Design */}
             <div className="relative">
               {/* Main Logo Container */}
-              <div className="w-10 h-10 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 bg-gradient-to-br from-red-400/20 to-transparent"></div>
+              <div className=" h-5 flex items-center justify-center shadow-lg relative overflow-hidden">
+            
+                 <img src="/logo.png" alt="Logo" className="object-cover" />
+               
                 
-                {/* Logo Icon - Using Hexagon for a modern tech look */}
-                <Hexagon className="w-6 h-6 text-white relative z-10" fill="currentColor" />
-                
-                {/* Subtle glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+              
               </div>
               
-              {/* Optional: Small accent dot */}
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white"></div>
+             
             </div>
             
-            {/* Brand Text */}
-            <div className="flex flex-col">
-              <span className="text-white dark:text-white light:text-gray-900 font-bold text-lg leading-tight">
-                ModernCorp
-              </span>
-              <span className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-xs font-medium">
-                Dashboard
-              </span>
-            </div>
+         
           </div>
 
           {/* Search */}
