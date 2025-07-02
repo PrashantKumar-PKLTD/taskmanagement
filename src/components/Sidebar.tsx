@@ -22,6 +22,7 @@ import {
   FolderOpen,
   Hexagon
 } from 'lucide-react';
+import { useUserStore } from '../store/userStore';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -31,65 +32,205 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashboard', onNavigate }) => {
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', page: 'dashboard', active: currentPage === 'dashboard' },
-    { icon: Layers, label: 'Layouts', page: 'layouts' },
-    { icon: FileText, label: 'Front Pages', page: 'front-pages' },
+  const { currentUser, hasPermission } = useUserStore();
+
+  // Define role-based access control
+  const isRestrictedUser = () => {
+    if (!currentUser) return false;
+    return currentUser.role === 'Editor' || currentUser.role === 'Author';
+  };
+
+  // Define allowed modules for restricted users (Editor/Author)
+  const allowedModulesForRestrictedUsers = [
+    'dashboard',
+    'kanban', 
+    'chat',
+    'calendar',
+    'projects',
+    'tasks',
+    'reports',
+    'analytics',
+    'performance',
+    'data'
   ];
+
+  // Check if a menu item should be visible
+  const isMenuItemVisible = (page: string, requiredPermission?: string) => {
+    // If user is restricted (Editor/Author), only show allowed modules
+    if (isRestrictedUser()) {
+      return allowedModulesForRestrictedUsers.includes(page);
+    }
+    
+    // For other roles, check permissions if specified
+    if (requiredPermission) {
+      return hasPermission(requiredPermission);
+    }
+    
+    // Default: show all items for unrestricted users
+    return true;
+  };
+
+  const menuItems = [
+    { 
+      icon: LayoutDashboard, 
+      label: 'Dashboard', 
+      page: 'dashboard', 
+      active: currentPage === 'dashboard',
+      visible: isMenuItemVisible('dashboard')
+    },
+    { 
+      icon: Layers, 
+      label: 'Layouts', 
+      page: 'layouts',
+      visible: isMenuItemVisible('layouts')
+    },
+    { 
+      icon: FileText, 
+      label: 'Front Pages', 
+      page: 'front-pages',
+      visible: isMenuItemVisible('front-pages')
+    },
+  ].filter(item => item.visible);
 
   const appsPages = [
-    { icon: Mail, label: 'Email', page: 'email' },
-    { icon: MessageCircle, label: 'Chat', page: 'chat', active: currentPage === 'chat' },
-    { icon: Calendar, label: 'Calendar', page: 'calendar' },
-    { icon: Kanban, label: 'Kanban', page: 'kanban', active: currentPage === 'kanban' },
-    { icon: FolderOpen, label: 'Projects', page: 'projects', active: currentPage === 'projects' },
-    { icon: CheckSquare, label: 'Tasks', page: 'tasks', active: currentPage === 'tasks' },
-    { icon: Receipt, label: 'Invoice', page: 'invoice' },
-    { icon: Users, label: 'Users', page: 'users' },
-    { icon: Shield, label: 'Roles & Permissions', page: 'roles' },
-  ];
+    { 
+      icon: Mail, 
+      label: 'Email', 
+      page: 'email',
+      visible: isMenuItemVisible('email', 'email.view')
+    },
+    { 
+      icon: MessageCircle, 
+      label: 'Chat', 
+      page: 'chat', 
+      active: currentPage === 'chat',
+      visible: isMenuItemVisible('chat')
+    },
+    { 
+      icon: Calendar, 
+      label: 'Calendar', 
+      page: 'calendar',
+      visible: isMenuItemVisible('calendar', 'calendar.view')
+    },
+    { 
+      icon: Kanban, 
+      label: 'Kanban', 
+      page: 'kanban', 
+      active: currentPage === 'kanban',
+      visible: isMenuItemVisible('kanban')
+    },
+    { 
+      icon: FolderOpen, 
+      label: 'Projects', 
+      page: 'projects', 
+      active: currentPage === 'projects',
+      visible: isMenuItemVisible('projects')
+    },
+    { 
+      icon: CheckSquare, 
+      label: 'Tasks', 
+      page: 'tasks', 
+      active: currentPage === 'tasks',
+      visible: isMenuItemVisible('tasks')
+    },
+    { 
+      icon: Receipt, 
+      label: 'Invoice', 
+      page: 'invoice',
+      visible: isMenuItemVisible('invoice', 'invoice.view')
+    },
+    { 
+      icon: Users, 
+      label: 'Users', 
+      page: 'users',
+      visible: isMenuItemVisible('users', 'users.view')
+    },
+    { 
+      icon: Shield, 
+      label: 'Roles & Permissions', 
+      page: 'roles',
+      visible: isMenuItemVisible('roles', 'roles.view')
+    },
+  ].filter(item => item.visible);
 
   const analytics = [
-    { icon: BarChart3, label: 'Reports', page: 'reports' },
-    { icon: TrendingUp, label: 'Analytics', page: 'analytics' },
-    { icon: Zap, label: 'Performance', page: 'performance' },
-    { icon: Database, label: 'Data Management', page: 'data' },
-  ];
+    { 
+      icon: BarChart3, 
+      label: 'Reports', 
+      page: 'reports',
+      visible: isMenuItemVisible('reports')
+    },
+    { 
+      icon: TrendingUp, 
+      label: 'Analytics', 
+      page: 'analytics',
+      visible: isMenuItemVisible('analytics')
+    },
+    { 
+      icon: Zap, 
+      label: 'Performance', 
+      page: 'performance',
+      visible: isMenuItemVisible('performance')
+    },
+    { 
+      icon: Database, 
+      label: 'Data Management', 
+      page: 'data',
+      visible: isMenuItemVisible('data')
+    },
+  ].filter(item => item.visible);
 
   const system = [
-    { icon: Settings, label: 'Settings', page: 'settings' },
-    { icon: Bell, label: 'Notifications', page: 'notifications' },
-    { icon: Shield, label: 'Security', page: 'security' },
-    { icon: HelpCircle, label: 'Help & Support', page: 'help' },
-  ];
+    { 
+      icon: Settings, 
+      label: 'Settings', 
+      page: 'settings',
+      visible: isMenuItemVisible('settings', 'settings.view')
+    },
+    { 
+      icon: Bell, 
+      label: 'Notifications', 
+      page: 'notifications',
+      visible: isMenuItemVisible('notifications', 'notifications.view')
+    },
+    { 
+      icon: Shield, 
+      label: 'Security', 
+      page: 'security',
+      visible: isMenuItemVisible('security', 'security.view')
+    },
+    { 
+      icon: HelpCircle, 
+      label: 'Help & Support', 
+      page: 'help',
+      visible: isMenuItemVisible('help', 'help.view')
+    },
+  ].filter(item => item.visible);
 
   const handleNavigation = (page: string) => {
-    // Define pages that don't require permission checks
-    const publicPages = ['dashboard', 'chat', 'profile', 'projects', 'tasks', 'kanban'];
-    
-    // Check permissions for restricted pages only
-    if (!publicPages.includes(page)) {
-      const permissionMap: { [key: string]: string } = {
-        'users': 'users.view',
-        'roles': 'roles.view',
-        'email': 'email.view',
-        'calendar': 'calendar.view',
-        'invoice': 'invoice.view',
-        'reports': 'reports.view',
-        'analytics': 'analytics.view',
-        'performance': 'performance.view',
-        'data': 'data.view',
-        'settings': 'settings.view',
-        'notifications': 'notifications.view',
-        'security': 'security.view',
-        'help': 'help.view'
-      };
+    // Additional security check before navigation
+    if (isRestrictedUser() && !allowedModulesForRestrictedUsers.includes(page)) {
+      alert('Access denied. You do not have permission to access this section.');
+      return;
+    }
 
-      const requiredPermission = permissionMap[page];
-      if (requiredPermission) {
-        // Note: You'll need to implement permission checking here
-        // For now, we'll allow navigation to all pages
-      }
+    // Check permissions for restricted pages
+    const permissionMap: { [key: string]: string } = {
+      'users': 'users.view',
+      'roles': 'roles.view',
+      'email': 'email.view',
+      'calendar': 'calendar.view',
+      'invoice': 'invoice.view',
+      'settings': 'settings.view',
+      'notifications': 'notifications.view',
+      'security': 'security.view',
+      'help': 'help.view'
+    };
+
+    const requiredPermission = permissionMap[page];
+    if (requiredPermission && !hasPermission(requiredPermission)) {
+      alert('You don\'t have permission to access this section.');
+      return;
     }
 
     if (onNavigate) {
@@ -117,6 +258,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
     </button>
   );
 
+  // Don't render sidebar if user is not authenticated
+  if (!currentUser) {
+    return null;
+  }
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -136,10 +282,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
         {/* Fixed Header Section */}
         <div className="flex-shrink-0">
           {/* Logo */}
-       <div className="flex items-center gap-3 p-6 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
-  <img src="./logo.png" alt="Logo" className="h-4 w-auto" />
-</div>
-
+          <div className="flex items-center gap-3 p-6 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
+            {/* Modern Logo Design */}
+            <div className="relative">
+              {/* Main Logo Container */}
+              <div className="w-10 h-10 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-red-400/20 to-transparent"></div>
+                
+                {/* Logo Icon - Using Hexagon for a modern tech look */}
+                <Hexagon className="w-6 h-6 text-white relative z-10" fill="currentColor" />
+                
+                {/* Subtle glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl"></div>
+              </div>
+              
+              {/* Optional: Small accent dot */}
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white"></div>
+            </div>
+            
+            {/* Brand Text */}
+            <div className="flex flex-col">
+              <span className="text-white dark:text-white light:text-gray-900 font-bold text-lg leading-tight">
+                ModernCorp
+              </span>
+              <span className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-xs font-medium">
+                Dashboard
+              </span>
+            </div>
+          </div>
 
           {/* Search */}
           <div className="p-4 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
@@ -156,40 +327,65 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto hide-scrollbar">
-          {/* Main Menu */}
-          <nav className="px-4 py-4 space-y-1">
-            {menuItems.map(renderNavItem)}
-          </nav>
-
-          {/* Apps & Pages */}
-          <div className="px-4 pb-4">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
-              APPS & PAGES
-            </h3>
-            <nav className="space-y-1">
-              {appsPages.map(renderNavItem)}
+          {/* Main Menu - Only show if there are visible items */}
+          {menuItems.length > 0 && (
+            <nav className="px-4 py-4 space-y-1">
+              {menuItems.map(renderNavItem)}
             </nav>
-          </div>
+          )}
 
-          {/* Analytics */}
-          <div className="px-4 pb-4">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
-              ANALYTICS
-            </h3>
-            <nav className="space-y-1">
-              {analytics.map(renderNavItem)}
-            </nav>
-          </div>
+          {/* Apps & Pages - Only show if there are visible items */}
+          {appsPages.length > 0 && (
+            <div className="px-4 pb-4">
+              <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
+                APPS & PAGES
+              </h3>
+              <nav className="space-y-1">
+                {appsPages.map(renderNavItem)}
+              </nav>
+            </div>
+          )}
 
-          {/* System */}
-          <div className="px-4 pb-6">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
-              SYSTEM
-            </h3>
-            <nav className="space-y-1">
-              {system.map(renderNavItem)}
-            </nav>
-          </div>
+          {/* Analytics - Only show if there are visible items */}
+          {analytics.length > 0 && (
+            <div className="px-4 pb-4">
+              <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
+                ANALYTICS
+              </h3>
+              <nav className="space-y-1">
+                {analytics.map(renderNavItem)}
+              </nav>
+            </div>
+          )}
+
+          {/* System - Only show if there are visible items */}
+          {system.length > 0 && (
+            <div className="px-4 pb-6">
+              <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
+                SYSTEM
+              </h3>
+              <nav className="space-y-1">
+                {system.map(renderNavItem)}
+              </nav>
+            </div>
+          )}
+
+          {/* Role-based access indicator for restricted users */}
+          {isRestrictedUser() && (
+            <div className="px-4 pb-4">
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-blue-400" />
+                  <div>
+                    <p className="text-blue-400 text-xs font-medium">Limited Access</p>
+                    <p className="text-blue-300 text-xs">
+                      Your {currentUser.role} role has access to core modules only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
