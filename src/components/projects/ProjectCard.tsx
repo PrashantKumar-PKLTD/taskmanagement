@@ -100,10 +100,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const progress = calculateProgress();
   
   // Safe access to project properties
-  const projectName = project.name || 'Unnamed Project';
-  const projectStatus = project.status || 'unknown';
-  const projectPriority = project.priority || 'unknown';
-  const projectDescription = project.description || 'No description available';
+  const projectName = String(project.name || 'Unnamed Project');
+  const projectStatus = String(project.status || 'unknown');
+  const projectPriority = String(project.priority || 'unknown');
+  const projectDescription = String(project.description || 'No description available');
   const teamMembersCount = Array.isArray(project.teamMembers) ? project.teamMembers.length : 0;
   const dueDate = project.dueDate || null;
 

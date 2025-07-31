@@ -247,7 +247,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                     <Target className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">{project.name || 'Unnamed Project'}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2">{String(project.name || 'Unnamed Project')}</h2>
                     <div className="flex items-center gap-3">
                       <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status || 'unknown')}`}>
                         <StatusIcon className="w-4 h-4" />
@@ -267,7 +267,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 <h3 className="text-lg font-semibold text-white mb-3">Project Description</h3>
                 <div 
                   className="prose prose-invert prose-slate max-w-none prose-headings:text-white prose-p:text-slate-300 prose-a:text-red-400 prose-strong:text-white prose-blockquote:border-red-500 prose-blockquote:bg-slate-700/50 prose-code:bg-slate-700 prose-code:text-slate-300 prose-ul:text-slate-300 prose-ol:text-slate-300 prose-li:text-slate-300"
-                  dangerouslySetInnerHTML={{ __html: project.description || 'No description available.' }}
+                  dangerouslySetInnerHTML={{ __html: String(project.description || 'No description available.') }}
                 />
               </div>
 
@@ -304,7 +304,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 </div>
                 <div className="text-center p-4 bg-slate-700 rounded-lg">
                   <DollarSign className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                  <div className="text-white font-bold">{project.budget ? `$${project.budget.toLocaleString()}` : 'N/A'}</div>
+                  <div className="text-white font-bold">{project.budget ? `$${Number(project.budget).toLocaleString()}` : 'N/A'}</div>
                   <div className="text-slate-400 text-sm">Budget</div>
                 </div>
               </div>
@@ -318,12 +318,15 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                   Project Objectives
                 </h3>
                 <div className="space-y-3">
-                  {project.objectives.map((objective: string, index: number) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                      <p className="text-slate-300">{objective || 'No objective specified'}</p>
-                    </div>
-                  ))}
+                  {project.objectives.map((objective: any, index: number) => {
+                    const objectiveText = typeof objective === 'string' ? objective : String(objective || 'No objective specified');
+                    return (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                        <p className="text-slate-300">{objectiveText}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -336,12 +339,15 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                   Deliverables
                 </h3>
                 <div className="space-y-3">
-                  {project.deliverables.map((deliverable: string, index: number) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
-                      <p className="text-slate-300">{deliverable || 'No deliverable specified'}</p>
-                    </div>
-                  ))}
+                  {project.deliverables.map((deliverable: any, index: number) => {
+                    const deliverableText = typeof deliverable === 'string' ? deliverable : String(deliverable || 'No deliverable specified');
+                    return (
+                      <div key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
+                        <p className="text-slate-300">{deliverableText}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -367,7 +373,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 {project.client && (
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Client</span>
-                    <span className="text-white">{project.client}</span>
+                    <span className="text-white">{String(project.client)}</span>
                   </div>
                 )}
                 
@@ -392,14 +398,20 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 </h3>
                 
                 <div className="space-y-3">
-                  {project.teamMembers.map((member: any, index: number) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
+                  {project.teamMembers.map((member: any, index: number) => {
+                    const memberName = typeof member === 'string' 
+                      ? member 
+                      : (member?.name || member?.email || `Member ${index + 1}`);
+                    
+                    return (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-slate-300">{memberName}</span>
                       </div>
-                      <span className="text-slate-300">{typeof member === 'string' ? member : member?.name || member?.email || 'Unknown Member'}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -413,11 +425,14 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 </h3>
                 
                 <div className="flex flex-wrap gap-2">
-                  {project.tags.map((tag: string, index: number) => (
-                    <span key={index} className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-sm">
-                      {tag || 'No tag'}
-                    </span>
-                  ))}
+                  {project.tags.map((tag: any, index: number) => {
+                    const tagText = typeof tag === 'string' ? tag : String(tag || 'No tag');
+                    return (
+                      <span key={index} className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-sm">
+                        {tagText}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
