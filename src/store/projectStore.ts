@@ -55,7 +55,9 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       }));
       set({ projects, loading: false });
     } catch (error: any) {
-      set({ error: error.message, loading: false });
+      console.error('Error fetching projects:', error);
+      const errorMessage = error.message || 'Failed to load projects. Please check your connection and try again.';
+      set({ error: errorMessage, loading: false });
     }
   },
 

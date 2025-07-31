@@ -30,6 +30,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   onEdit,
   onDelete
 }) => {
+  // Error handling for invalid project data
+  if (!project) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6">
+        <div className="flex items-center gap-3 text-red-400">
+          <AlertCircle className="w-5 h-5" />
+          <span className="font-medium">Invalid Project Data</span>
+        </div>
+        <p className="text-red-300 text-sm mt-2">This project could not be loaded due to missing data.</p>
+      </div>
+    );
+  }
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'text-green-400 bg-green-400/10';
@@ -61,21 +73,39 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    if (!dateString) return 'No date';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   const calculateProgress = () => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
-    const completedTasks = project.tasks.filter((task: any) => task.status === 'completed').length;
-    return Math.round((completedTasks / project.tasks.length) * 100);
+    try {
+      if (!Array.isArray(project.tasks) || project.tasks.length === 0) return 0;
+      const completedTasks = project.tasks.filter((task: any) => task?.status === 'completed').length;
+      return Math.round((completedTasks / project.tasks.length) * 100);
+    } catch (error) {
+      console.error('Error calculating progress:', error);
+      return 0;
+    }
   };
 
-  const StatusIcon = getStatusIcon(project.status);
+  const StatusIcon = getStatusIcon(project.status || 'unknown');
   const progress = calculateProgress();
+  
+  // Safe access to project properties
+  const projectName = project.name || 'Unnamed Project';
+  const projectStatus = project.status || 'unknown';
+  const projectPriority = project.priority || 'unknown';
+  const projectDescription = project.description || 'No description available';
+  const teamMembersCount = Array.isArray(project.teamMembers) ? project.teamMembers.length : 0;
+  const dueDate = project.dueDate || null;
 
   if (viewMode === 'list') {
     return (
@@ -88,16 +118,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-semibold text-white">{project.name}</h3>
-                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                <h3 className="text-lg font-semibold text-white">{projectName}</h3>
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(projectStatus)}`}>
                   <StatusIcon className="w-3 h-3" />
-                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                  {projectStatus.charAt(0).toUpperCase() + projectStatus.slice(1)}
                 </div>
-                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}>
-                  {project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(projectPriority)}`}>
+                  {projectPriority.charAt(0).toUpperCase() + projectPriority.slice(1)}
                 </div>
               </div>
-              <p className="text-slate-400 text-sm line-clamp-1">{project.description}</p>
+              <p className="text-slate-400 text-sm line-clamp-1">{projectDescription}</p>
             </div>
           </div>
 
@@ -105,11 +135,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             <div className="flex items-center gap-4 text-sm text-slate-400">
               <div className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                {project.teamMembers?.length || 0}
+                {teamMembersCount}
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                {formatDate(project.dueDate)}
+                {formatDate(dueDate)}
               </div>
               <div className="flex items-center gap-2">
                 <span>Progress:</span>
@@ -125,21 +155,42 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
             <div className="flex items-center gap-2">
               <button
-                onClick={onView}
+                onClick={() => {
+                  try {
+                    onView();
+                  } catch (error) {
+                    console.error('Error viewing project:', error);
+                    alert('Error loading project details. Please try again.');
+                  }
+                }}
                 className="p-2 text-slate-400 hover:text-blue-400 hover:bg-slate-700 rounded-lg transition-colors"
                 title="View Details"
               >
                 <Eye className="w-4 h-4" />
               </button>
               <button
-                onClick={onEdit}
+                onClick={() => {
+                  try {
+                    onEdit();
+                  } catch (error) {
+                    console.error('Error editing project:', error);
+                    alert('Error opening project editor. Please try again.');
+                  }
+                }}
                 className="p-2 text-slate-400 hover:text-green-400 hover:bg-slate-700 rounded-lg transition-colors"
                 title="Edit Project"
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
-                onClick={onDelete}
+                onClick={() => {
+                  try {
+                    onDelete();
+                  } catch (error) {
+                    console.error('Error deleting project:', error);
+                    alert('Error deleting project. Please try again.');
+                  }
+                }}
                 className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
                 title="Delete Project"
               >
@@ -160,14 +211,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             <Target className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">{project.name}</h3>
+            <h3 className="text-lg font-semibold text-white">{projectName}</h3>
             <div className="flex items-center gap-2 mt-1">
-              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(projectStatus)}`}>
                 <StatusIcon className="w-3 h-3" />
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                {projectStatus.charAt(0).toUpperCase() + projectStatus.slice(1)}
               </div>
-              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}>
-                {project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}
+              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(projectPriority)}`}>
+                {projectPriority.charAt(0).toUpperCase() + projectPriority.slice(1)}
               </div>
             </div>
           </div>
@@ -180,18 +231,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         </div>
       </div>
 
-      <p className="text-slate-400 text-sm mb-4 line-clamp-2">{project.description}</p>
+      <p className="text-slate-400 text-sm mb-4 line-clamp-2">{projectDescription}</p>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-4 text-slate-400">
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
-              {project.teamMembers?.length || 0} members
+              {teamMembersCount} members
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              {formatDate(project.dueDate)}
+              {formatDate(dueDate)}
             </div>
           </div>
         </div>
@@ -211,21 +262,42 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
         <div className="flex items-center gap-2 pt-2">
           <button
-            onClick={onView}
+            onClick={() => {
+              try {
+                onView();
+              } catch (error) {
+                console.error('Error viewing project:', error);
+                alert('Error loading project details. Please try again.');
+              }
+            }}
             className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm font-medium transition-colors"
           >
             <Eye className="w-4 h-4" />
             View
           </button>
           <button
-            onClick={onEdit}
+            onClick={() => {
+              try {
+                onEdit();
+              } catch (error) {
+                console.error('Error editing project:', error);
+                alert('Error opening project editor. Please try again.');
+              }
+            }}
             className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             <Edit className="w-4 h-4" />
             Edit
           </button>
           <button
-            onClick={onDelete}
+            onClick={() => {
+              try {
+                onDelete();
+              } catch (error) {
+                console.error('Error deleting project:', error);
+                alert('Error deleting project. Please try again.');
+              }
+            }}
             className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
             title="Delete Project"
           >

@@ -20,7 +20,8 @@ import {
   Star,
   GitBranch,
   Activity,
-  BarChart3
+  BarChart3,
+  ArrowLeft
 } from 'lucide-react';
 import ProjectForm from './ProjectForm';
 import ProjectDetails from './ProjectDetails';
@@ -35,6 +36,7 @@ const ProjectManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'on-hold' | 'cancelled'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high' | 'critical'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewError, setViewError] = useState<string | null>(null);
 
   const {
     projects,
@@ -84,8 +86,27 @@ const ProjectManagement: React.FC = () => {
   };
 
   const handleViewProject = (project: any) => {
-    setSelectedProject(project);
-    setCurrentView('details');
+    try {
+      setViewError(null);
+      
+      // Validate project data before viewing
+      if (!project) {
+        setViewError('Project data is not available. Please try refreshing the page.');
+        return;
+      }
+      
+      // Check if project has minimum required fields
+      if (!project.name && !project.id && !project._id) {
+        setViewError('Project data appears to be corrupted. Please contact support.');
+        return;
+      }
+      
+      setSelectedProject(project);
+      setCurrentView('details');
+    } catch (error) {
+      console.error('Error viewing project:', error);
+      setViewError('An error occurred while trying to view the project. Please try again.');
+    }
   };
 
   const handleDeleteProject = async (projectId: string) => {
@@ -136,11 +157,75 @@ const ProjectManagement: React.FC = () => {
   }
 
   if (currentView === 'details') {
+    // Show error if there was an issue loading the project
+    if (viewError) {
+      return (
+        <div className="p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setCurrentView('list');
+                    setSelectedProject(null);
+                    setViewError(null);
+                  }}
+                  className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Error Loading Project</h1>
+                  <p className="text-slate-400 mt-1">Unable to display project details</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-8 text-center">
+              <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-red-400 mb-2">Project Loading Failed</h3>
+              <p className="text-slate-300 mb-6">{viewError}</p>
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => {
+                    setCurrentView('list');
+                    setSelectedProject(null);
+                    setViewError(null);
+                  }}
+                  className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  Back to Projects
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                >
+                  Refresh Page
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <ProjectDetails
         project={selectedProject}
-        onEdit={() => handleEditProject(selectedProject)}
-        onBack={() => setCurrentView('list')}
+        onEdit={() => {
+          try {
+            handleEditProject(selectedProject);
+          } catch (error) {
+            console.error('Error editing project:', error);
+            setViewError('An error occurred while trying to edit the project. Please try again.');
+          }
+        }}
+        onBack={() => {
+          setCurrentView('list');
+          setSelectedProject(null);
+          setViewError(null);
+        }}
       />
     );
   }

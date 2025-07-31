@@ -118,13 +118,57 @@ export const apiRequest = async (
     const response = await fetch(url, config);
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      let errorMessage = `Request failed with status ${response.status}`;
+      
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (parseError) {
+        // If we can't parse the error response, use status-based messages
+        switch (response.status) {
+          case 400:
+            errorMessage = 'Bad request. Please check your input and try again.';
+            break;
+          case 401:
+            errorMessage = 'Authentication failed. Please log in again.';
+            break;
+          case 403:
+            errorMessage = 'Access denied. You don\'t have permission to perform this action.';
+            break;
+          case 404:
+            errorMessage = 'The requested resource was not found.';
+            break;
+          case 500:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          case 502:
+          case 503:
+          case 504:
+            errorMessage = 'Service temporarily unavailable. Please try again later.';
+            break;
+          default:
+            errorMessage = `Request failed with status ${response.status}. Please try again.`;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
     
     return await response.json();
   } catch (error) {
     console.error('API request failed:', error);
+    
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error. Please check your internet connection and try again.');
+    }
+    
+    // Handle timeout errors
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
+    
+    // Re-throw the error if it's already a custom error
     throw error;
   }
 };

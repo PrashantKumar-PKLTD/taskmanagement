@@ -11,6 +11,7 @@ import LoginForm from './components/auth/LoginForm';
 import ProfileDropdown from './components/profile/ProfileDropdown';
 import ProfileManagement from './components/profile/ProfileManagement';
 import ModernDashboard from './components/dashboard/ModernDashboard';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useUserStore } from './store/userStore';
 import { useProfileStore } from './store/profileStore';
 import { useDashboardStore } from './store/dashboardStore';
@@ -134,7 +135,11 @@ function App() {
       case 'roles':
         return <RoleManagement />;
       case 'projects':
-        return <ProjectManagement />;
+        return (
+          <ErrorBoundary>
+            <ProjectManagement />
+          </ErrorBoundary>
+        );
       case 'tasks':
         return <TaskManagement />;
       case 'kanban':
