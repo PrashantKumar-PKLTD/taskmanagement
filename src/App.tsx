@@ -201,12 +201,10 @@ function App() {
           </div>
         </header>
 
-        {/* Main Content - Scrollable for most pages, special handling for chat/kanban/dashboard */}
+        {/* Main Content - Scrollable for most pages, special handling for chat/dashboard */}
         <main className={`flex-1 bg-slate-900 dark:bg-slate-900 light:bg-gray-50 ${
-          currentPage === 'chat' || currentPage === 'kanban' 
+          currentPage === 'chat'
             ? 'overflow-hidden' 
-            : currentPage === 'dashboard'
-            ? 'overflow-y-auto hide-scrollbar'
             : 'overflow-y-auto hide-scrollbar'
         }`}>
           {renderCurrentPage()}
