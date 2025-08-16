@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import connectDB from './config/database.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -12,8 +14,10 @@ import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
 import permissionRoutes from './routes/permissions.js';
 import uploadRoutes from './routes/upload.js';
+import chatRoutes from './routes/chat.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { initializeDefaultData } from './utils/initializeData.js';
+import { handleChatSocket } from './socket/chatSocket.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +26,13 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    methods: ['GET', 'POST']
+  }
+});
 const PORT = process.env.PORT || 3005;
 
 // Middleware
@@ -52,6 +63,14 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/chat', chatRoutes);
+
+// Initialize WebSocket handlers
+handleChatSocket(io);
+app.use('/api/chat', chatRoutes);
+
+// Initialize WebSocket handlers
+handleChatSocket(io);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -83,7 +102,7 @@ const startServer = async () => {
     await connectDB();
     
     // Start the server
-    app.listen(PORT, async () => {
+    server.listen(PORT, async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Dashboard API: http://localhost:${PORT}/api`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);

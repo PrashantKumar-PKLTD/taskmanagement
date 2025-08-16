@@ -66,6 +66,14 @@ export const API_ENDPOINTS = {
     IMAGES: `${API_BASE_URL}/upload/images`,
   },
   
+  // Chat
+  CHAT: {
+    BASE: `${API_BASE_URL}/chat`,
+    BY_ID: (id: string) => `${API_BASE_URL}/chat/${id}`,
+    MESSAGES: (id: string) => `${API_BASE_URL}/chat/${id}/messages`,
+    READ: (id: string) => `${API_BASE_URL}/chat/${id}/read`,
+  },
+  
   // Health
   HEALTH: `${API_BASE_URL}/health`,
 };

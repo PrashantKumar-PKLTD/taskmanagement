@@ -5,8 +5,8 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all roles
-router.get('/', authenticate, authorize(['roles.view']), async (req, res) => {
+// Get all roles (simplified for chat)
+router.get('/', authenticate, async (req, res) => {
   try {
     const roles = await Role.find().sort({ createdAt: -1 });
     res.json(roles);

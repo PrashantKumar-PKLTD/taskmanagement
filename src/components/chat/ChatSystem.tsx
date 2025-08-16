@@ -70,6 +70,12 @@ const ChatSystem: React.FC = () => {
 
   useEffect(() => {
     if (selectedChat) {
+      const { socket } = useChatStore.getState();
+      if (socket && socket.connected) {
+        socket.emit('join_chat', selectedChat);
+        console.log('Joined chat:', selectedChat);
+      }
+      // Always fetch latest messages when selecting a chat
       fetchMessages(selectedChat);
       markAsRead(selectedChat);
     }
@@ -141,7 +147,7 @@ const ChatSystem: React.FC = () => {
   );
 
   const availableUsersForChat = availableUsers.filter(user => 
-    user.id !== currentUser?.id && user.status === 'active'
+    user.id !== currentUser?._id && user.id !== currentUser?.id && user.status === 'active'
   );
 
   const selectedChatData = chats.find(chat => chat.id === selectedChat);
@@ -181,15 +187,15 @@ const ChatSystem: React.FC = () => {
 
   const getChatStatusColor = (chat: any) => {
     if (chat.type === 'direct') {
-      const otherUser = chat.participants.find((p: any) => p.id !== currentUser?.id);
-      const isOnline = onlineUsers.includes(otherUser?.id || '');
+      const otherUser = chat.participants.find((p: any) => p.id !== currentUser?._id && p.id !== currentUser?.id);
+      const isOnline = onlineUsers.includes(otherUser?.id || '') || onlineUsers.includes(otherUser?._id || '');
       return isOnline ? 'bg-green-400' : 'bg-slate-400';
     }
     return 'bg-blue-400';
   };
 
   const getMessageStatusIcon = (msg: any) => {
-    if (msg.senderId !== currentUser?.id) return null;
+    if (msg.senderId !== currentUser?._id && msg.senderId !== currentUser?.id) return null;
     
     if (msg.readBy && msg.readBy.length > 1) {
       return <CheckCircle2 className="w-3 h-3 text-blue-400" />;
@@ -303,7 +309,7 @@ const ChatSystem: React.FC = () => {
                 const isSelected = selectedChat === chat.id;
                 const hasUnread = chat.unreadCount > 0;
                 const otherUser = chat.type === 'direct' 
-                  ? chat.participants.find(p => p.id !== currentUser?.id)
+                  ? chat.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id)
                   : null;
                 
                 return (
@@ -337,7 +343,7 @@ const ChatSystem: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <h3 className={`font-medium truncate ${isSelected ? 'text-white' : 'text-white dark:text-white light:text-gray-900'}`}>
-                            {chat.name}
+                            {chat.type === 'direct' && otherUser ? otherUser.name : chat.name}
                           </h3>
                           {otherUser && (
                             <div className={`${getRoleColor(otherUser.role)}`}>
@@ -395,16 +401,22 @@ const ChatSystem: React.FC = () => {
                   
                   <div>
                     <h3 className="font-semibold text-white dark:text-white light:text-gray-900">
-                      {selectedChatData.name}
+                      {selectedChatData.type === 'direct' 
+                        ? (() => {
+                            const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
+                            return otherUser?.name || selectedChatData.name;
+                          })()
+                        : selectedChatData.name
+                      }
                     </h3>
                     <p className="text-sm text-slate-400 dark:text-slate-400 light:text-gray-500">
                       {selectedChatData.type === 'direct' 
                         ? (() => {
-                            const otherUser = selectedChatData.participants.find(p => p.id !== currentUser?.id);
-                            const isOnline = otherUser && onlineUsers.includes(otherUser.id);
+                            const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
+                            const isOnline = otherUser && (onlineUsers.includes(otherUser.id) || onlineUsers.includes(otherUser._id));
                             return `${otherUser?.role} • ${isOnline ? 'Online' : 'Offline'}`;
                           })()
-                        : `${selectedChatData.participants.length} members • ${onlineUsers.filter(id => selectedChatData.participants.some(p => p.id === id)).length} online`
+                        : `${selectedChatData.participants.length} members • ${onlineUsers.filter(id => selectedChatData.participants.some(p => p.id === id || p._id === id)).length} online`
                       }
                     </p>
                   </div>
@@ -446,7 +458,7 @@ const ChatSystem: React.FC = () => {
               ) : (
                 <>
                   {chatMessages.map((msg, index) => {
-                    const isOwn = msg.senderId === currentUser?.id || msg.senderId === 'current-user';
+                    const isOwn = msg.senderId === currentUser?._id || msg.senderId === currentUser?.id;
                     const showDate = index === 0 || 
                       formatDate(msg.timestamp) !== formatDate(chatMessages[index - 1].timestamp);
                     const showAvatar = !isOwn && (
@@ -455,7 +467,31 @@ const ChatSystem: React.FC = () => {
                     );
                     
                     return (
-                      <div key={msg.id}>
+                      <div 
+                        key={msg.id}
+                        ref={(el) => {
+                          if (el && !isOwn && !msg.readBy.includes(currentUser?._id || currentUser?.id)) {
+                            const observer = new IntersectionObserver(
+                              (entries) => {
+                                entries.forEach((entry) => {
+                                  if (entry.isIntersecting) {
+                                    const { socket } = useChatStore.getState();
+                                    if (socket && socket.connected) {
+                                      socket.emit('mark_message_read', { 
+                                        chatId: selectedChat, 
+                                        messageId: msg.id 
+                                      });
+                                    }
+                                    observer.disconnect();
+                                  }
+                                });
+                              },
+                              { threshold: 0.5 }
+                            );
+                            observer.observe(el);
+                          }
+                        }}
+                      >
                         {showDate && (
                           <div className="text-center my-4">
                             <span className="bg-slate-700 dark:bg-slate-700 light:bg-gray-200 text-slate-300 dark:text-slate-300 light:text-gray-600 px-3 py-1 rounded-full text-xs">
@@ -640,7 +676,7 @@ const ChatSystem: React.FC = () => {
               <div className="space-y-2">
                 {selectedChatData.participants.map((participant) => {
                   const RoleIcon = getRoleIcon(participant.role);
-                  const isOnline = onlineUsers.includes(participant.id);
+                  const isOnline = onlineUsers.includes(participant.id) || onlineUsers.includes(participant._id);
                   
                   return (
                     <div key={participant.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100">
@@ -657,7 +693,7 @@ const ChatSystem: React.FC = () => {
                       <div className="flex-1">
                         <p className="text-sm font-medium text-white dark:text-white light:text-gray-900">
                           {participant.name}
-                          {participant.id === currentUser?.id && ' (You)'}
+                          {(participant.id === currentUser?._id || participant.id === currentUser?.id) && ' (You)'}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-400 light:text-gray-500">
                           {participant.role} • {isOnline ? 'Online' : 'Offline'}
@@ -760,7 +796,7 @@ const ChatSystem: React.FC = () => {
                   {availableUsersForChat.map((user) => {
                     const isSelected = selectedUsers.includes(user.id);
                     const RoleIcon = getRoleIcon(user.role);
-                    const isOnline = onlineUsers.includes(user.id);
+                    const isOnline = onlineUsers.includes(user.id) || onlineUsers.includes(user._id);
                     
                     return (
                       <label

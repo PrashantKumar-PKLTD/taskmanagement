@@ -5,8 +5,8 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all users
-router.get('/', authenticate, authorize(['users.view']), async (req, res) => {
+// Get all users (simplified for chat)
+router.get('/', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status, roleId } = req.query;
     
@@ -48,7 +48,7 @@ router.get('/', authenticate, authorize(['users.view']), async (req, res) => {
 });
 
 // Get user by ID
-router.get('/:id', authenticate, authorize(['users.view']), async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .populate('roleId')

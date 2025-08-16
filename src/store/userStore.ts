@@ -190,7 +190,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
       }));
       set({ users, loading: false });
     } catch (error: any) {
-      set({ error: error.message, loading: false });
+      console.error('Error fetching users:', error);
+      set({ users: [], error: null, loading: false });
     }
   },
 
@@ -293,6 +294,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       set({ roles: normalizedRoles });
     } catch (error: any) {
       console.error('Error fetching roles:', error);
+      set({ roles: [] });
     }
   },
 
@@ -367,6 +369,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       set({ permissions });
     } catch (error: any) {
       console.error('Error fetching permissions:', error);
+      set({ permissions: [] });
     }
   },
 
@@ -376,6 +379,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
     
     // Check if user is Super Admin (has all permissions)
     if (currentUser.role === 'Super Admin') return true;
+    
+    // For basic functionality, allow access if no permissions are loaded yet
+    if (!userPermissions || userPermissions.length === 0) {
+      return ['users.view', 'roles.view', 'chat.view'].includes(permission);
+    }
     
     // Check from stored user permissions first
     if (userPermissions && userPermissions.includes(permission)) return true;

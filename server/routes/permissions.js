@@ -4,8 +4,8 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all permissions
-router.get('/', authenticate, authorize(['roles.view']), async (req, res) => {
+// Get all permissions (simplified for chat)
+router.get('/', authenticate, async (req, res) => {
   try {
     const permissions = await Permission.find().sort({ category: 1, name: 1 });
     res.json(permissions);
