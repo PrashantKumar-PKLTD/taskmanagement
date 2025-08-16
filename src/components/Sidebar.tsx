@@ -314,7 +314,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage = 'dashb
           {appsPages.length > 0 && (
             <div className="px-4 pb-4">
               <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-400 light:text-gray-500 uppercase tracking-wider mb-4">
-                APPS & PAGES
+                APPS and PAGES
               </h3>
               <nav className="space-y-1">
                 {appsPages.map(renderNavItem)}
