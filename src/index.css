@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+:root { --brand: #1b2636; }  /* <-- your navy hex */
+
+
 /* Hide scrollbars for webkit browsers (Chrome, Safari, Edge) */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;

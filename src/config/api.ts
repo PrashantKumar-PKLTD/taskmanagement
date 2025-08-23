@@ -54,6 +54,14 @@ export const API_ENDPOINTS = {
     COMMENT: (id: string) => `${API_BASE_URL}/tasks/${id}/comment`,
   },
   
+  // Todos
+  TODOS: {
+    BASE: `${API_BASE_URL}/todos`,
+    BY_ID: (id: string) => `${API_BASE_URL}/todos/${id}`,
+    TOGGLE: (id: string) => `${API_BASE_URL}/todos/${id}/toggle`,
+    CLEAR_COMPLETED: `${API_BASE_URL}/todos/completed/clear`,
+  },
+  
   // Permissions
   PERMISSIONS: {
     BASE: `${API_BASE_URL}/permissions`,

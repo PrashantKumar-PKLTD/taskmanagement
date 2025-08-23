@@ -12,9 +12,16 @@ import ProfileDropdown from './components/profile/ProfileDropdown';
 import ProfileManagement from './components/profile/ProfileManagement';
 import ModernDashboard from './components/dashboard/ModernDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
+import PersonalTodo from './components/todo/PersonalTodo';
 import { useUserStore } from './store/userStore';
 import { useProfileStore } from './store/profileStore';
 import { useDashboardStore } from './store/dashboardStore';
+import DynamicCalendar from './components/calendar/DynamicCalendar';
+
+
+
+
+
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -69,7 +76,7 @@ function App() {
 
   const handleNavigation = (page: string) => {
     // Define pages that don't require permission checks
-    const publicPages = ['dashboard', 'chat', 'profile', 'projects', 'tasks', 'kanban'];
+    const publicPages = ['dashboard', 'chat', 'profile', 'projects', 'tasks', 'kanban','my-todo','calendar' ];
     
     // Check permissions for restricted pages only
     if (!publicPages.includes(page)) {
@@ -142,10 +149,16 @@ function App() {
         );
       case 'tasks':
         return <TaskManagement />;
+      case 'my-todo':
+        return (
+          <PersonalTodo />
+        );
       case 'kanban':
         return <KanbanBoard />;
       case 'chat':
         return <ChatSystem />;
+      case 'calendar':
+        return <DynamicCalendar/>
       case 'profile':
         return <ProfileManagement onBack={() => setCurrentPage('dashboard')} />;
       case 'dashboard':
@@ -187,6 +200,7 @@ function App() {
                  currentPage === 'chat' ? 'Messages' :
                  currentPage === 'projects' ? 'Project Management' :
                  currentPage === 'tasks' ? 'Task Management' :
+                 currentPage === 'my-todo' ? 'My Personal Todos' :
                  currentPage === 'kanban' ? 'Kanban Board' :
                  currentPage.replace('-', ' ')}
               </h1>

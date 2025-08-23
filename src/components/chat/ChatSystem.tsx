@@ -23,7 +23,10 @@ import {
   File,
   Download,
   UserPlus,
-  MessageCircle
+  MessageCircle,
+  Menu,
+  ArrowLeft,
+  ChevronDown
 } from 'lucide-react';
 import { useUserStore } from '../../store/userStore';
 import { useChatStore } from '../../store/chatStore';
@@ -41,6 +44,8 @@ const ChatSystem: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [newChatName, setNewChatName] = useState('');
   const [newChatType, setNewChatType] = useState<'direct' | 'group'>('direct');
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentUser } = useUserStore();
@@ -59,6 +64,21 @@ const ChatSystem: React.FC = () => {
     stopRealTimeUpdates
   } = useChatStore();
 
+  // Responsive hook
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setShowSidebar(false);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     fetchChats();
     startRealTimeUpdates();
@@ -75,11 +95,15 @@ const ChatSystem: React.FC = () => {
         socket.emit('join_chat', selectedChat);
         console.log('Joined chat:', selectedChat);
       }
-      // Always fetch latest messages when selecting a chat
       fetchMessages(selectedChat);
       markAsRead(selectedChat);
+      
+      // Close sidebar on mobile when chat is selected
+      if (isMobile) {
+        setShowSidebar(false);
+      }
     }
-  }, [selectedChat]);
+  }, [selectedChat, isMobile]);
 
   useEffect(() => {
     scrollToBottom();
@@ -112,7 +136,6 @@ const ChatSystem: React.FC = () => {
   const handleFileUpload = async (file: File) => {
     if (!selectedChat) return;
     
-    // In a real implementation, you would upload the file and get a URL
     const fileMessage = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
     await sendMessage(selectedChat, fileMessage, 'file');
     setShowFileUpload(false);
@@ -139,6 +162,11 @@ const ChatSystem: React.FC = () => {
       console.error('Error creating chat:', error);
       alert('Failed to create chat. Please try again.');
     }
+  };
+
+  const handleBackToChats = () => {
+    setSelectedChat(null);
+    setShowChatInfo(false);
   };
 
   const filteredChats = chats.filter(chat =>
@@ -224,8 +252,8 @@ const ChatSystem: React.FC = () => {
   // Show welcome message if user doesn't have chat access
   if (!currentUser) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-900 dark:bg-slate-900 light:bg-gray-50">
-        <div className="text-center">
+      <div className="h-full flex items-center justify-center bg-slate-900 dark:bg-slate-900 light:bg-gray-50 p-4">
+        <div className="text-center max-w-sm">
           <MessageCircle className="w-16 h-16 text-slate-400 dark:text-slate-400 light:text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white dark:text-white light:text-gray-900 mb-2">
             Chat System
@@ -239,37 +267,133 @@ const ChatSystem: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex bg-slate-900 dark:bg-slate-900 light:bg-gray-50">
-      {/* Chat List Sidebar */}
-      <div className="w-80 bg-slate-800 dark:bg-slate-800 light:bg-white border-r border-slate-700 dark:border-slate-700 light:border-gray-200 flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white dark:text-white light:text-gray-900">Messages</h2>
-            <button
-              onClick={() => setShowNewChatModal(true)}
-              className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
-              title="Start new chat"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-          
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm text-white dark:text-white light:text-gray-900 placeholder-slate-400 dark:placeholder-slate-400 light:placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-            />
+    <div className="h-full flex bg-slate-900 dark:bg-slate-900 light:bg-gray-50 relative">
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="absolute top-0 left-0 right-0 z-30 bg-slate-800 dark:bg-slate-800 light:bg-white border-b border-slate-700 dark:border-slate-700 light:border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            {selectedChat ? (
+              <>
+                <button
+                  onClick={handleBackToChats}
+                  className="p-2 -ml-2 rounded-lg text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex-1 mx-3">
+                  <h3 className="font-semibold text-white dark:text-white light:text-gray-900 truncate">
+                    {selectedChatData?.type === 'direct' 
+                      ? (() => {
+                          const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
+                          return otherUser?.name || selectedChatData.name;
+                        })()
+                      : selectedChatData?.name
+                    }
+                  </h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-400 light:text-gray-500 truncate">
+                    {selectedChatData?.type === 'direct' 
+                      ? (() => {
+                          const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
+                          const isOnline = otherUser && (onlineUsers.includes(otherUser.id) || onlineUsers.includes(otherUser._id));
+                          return isOnline ? 'Online' : 'Offline';
+                        })()
+                      : `${selectedChatData?.participants.length} members`
+                    }
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button className="p-2 rounded-lg text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100">
+                    <Phone className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 rounded-lg text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100">
+                    <Video className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setShowChatInfo(!showChatInfo)}
+                    className="p-2 rounded-lg text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-bold text-white dark:text-white light:text-gray-900">Messages</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowNewChatModal(true)}
+                    className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setShowSidebar(!showSidebar)}
+                    className="p-2 rounded-lg text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100"
+                  >
+                    <Menu className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
+      )}
+
+      {/* Chat List Sidebar */}
+      <div className={`${
+        isMobile 
+          ? `fixed inset-y-0 left-0 z-20 w-full bg-slate-800 dark:bg-slate-800 light:bg-white transform transition-transform duration-300 ${
+              showSidebar || !selectedChat ? 'translate-x-0' : '-translate-x-full'
+            }`
+          : 'w-80 bg-slate-800 dark:bg-slate-800 light:bg-white'
+      } border-r border-slate-700 dark:border-slate-700 light:border-gray-200 flex flex-col`}>
+        
+        {/* Desktop Header */}
+        {!isMobile && (
+          <div className="p-4 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white dark:text-white light:text-gray-900">Messages</h2>
+              <button
+                onClick={() => setShowNewChatModal(true)}
+                className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                title="Start new chat"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search conversations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm text-white dark:text-white light:text-gray-900 placeholder-slate-400 dark:placeholder-slate-400 light:placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Search */}
+        {isMobile && !selectedChat && (
+          <div className="p-4 pt-20 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search conversations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg pl-10 pr-4 py-3 text-sm text-white dark:text-white light:text-gray-900 placeholder-slate-400 dark:placeholder-slate-400 light:placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Online Users Count */}
-        <div className="px-4 py-2 border-b border-slate-700 dark:border-slate-700 light:border-gray-200">
+        <div className={`px-4 py-3 border-b border-slate-700 dark:border-slate-700 light:border-gray-200 ${isMobile && selectedChat ? 'hidden' : ''}`}>
           <div className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-400 light:text-gray-500">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
             <span>{onlineUsers.length} users online</span>
@@ -277,12 +401,12 @@ const ChatSystem: React.FC = () => {
         </div>
 
         {/* Chat List */}
-        <div className="flex-1 overflow-y-auto hide-scrollbar">
+        <div className={`flex-1 overflow-y-auto hide-scrollbar ${isMobile && selectedChat ? 'hidden' : ''}`}>
           {loading ? (
             <div className="p-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 mb-2 animate-pulse">
-                  <div className="w-10 h-10 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded-full"></div>
+                  <div className="w-12 h-12 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded-full"></div>
                   <div className="flex-1">
                     <div className="h-4 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded mb-2"></div>
                     <div className="h-3 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded w-2/3"></div>
@@ -322,27 +446,27 @@ const ChatSystem: React.FC = () => {
                         : 'hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100 text-white dark:text-white light:text-gray-900'
                     }`}
                   >
-                    <div className="relative">
+                    <div className="relative flex-shrink-0">
                       {chat.type === 'direct' && otherUser ? (
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                        <div className={`${isMobile ? 'w-12 h-12' : 'w-10 h-10'} bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center`}>
                           <span className="text-white font-medium text-sm">
                             {otherUser.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       ) : (
-                        <div className="w-10 h-10 bg-slate-600 dark:bg-slate-600 light:bg-gray-300 rounded-lg flex items-center justify-center">
-                          <ChatIcon className="w-5 h-5 text-slate-300 dark:text-slate-300 light:text-gray-600" />
+                        <div className={`${isMobile ? 'w-12 h-12' : 'w-10 h-10'} bg-slate-600 dark:bg-slate-600 light:bg-gray-300 rounded-lg flex items-center justify-center`}>
+                          <ChatIcon className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-slate-300 dark:text-slate-300 light:text-gray-600`} />
                         </div>
                       )}
                       
                       {/* Online status */}
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${getChatStatusColor(chat)} rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white`}></div>
+                      <div className={`absolute -bottom-0.5 -right-0.5 ${isMobile ? 'w-4 h-4' : 'w-3 h-3'} ${getChatStatusColor(chat)} rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white`}></div>
                     </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <h3 className={`font-medium truncate ${isSelected ? 'text-white' : 'text-white dark:text-white light:text-gray-900'}`}>
+                          <h3 className={`font-medium truncate ${isSelected ? 'text-white' : 'text-white dark:text-white light:text-gray-900'} ${isMobile ? 'text-base' : 'text-sm'}`}>
                             {chat.type === 'direct' && otherUser ? otherUser.name : chat.name}
                           </h3>
                           {otherUser && (
@@ -356,11 +480,11 @@ const ChatSystem: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className={`text-sm truncate ${isSelected ? 'text-white/70' : 'text-slate-400 dark:text-slate-400 light:text-gray-500'}`}>
+                        <p className={`${isMobile ? 'text-sm' : 'text-xs'} truncate ${isSelected ? 'text-white/70' : 'text-slate-400 dark:text-slate-400 light:text-gray-500'}`}>
                           {chat.lastMessage?.content || 'No messages yet'}
                         </p>
                         {hasUnread && (
-                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                          <span className={`bg-red-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center ${isMobile ? 'text-xs' : 'text-xs'}`}>
                             {chat.unreadCount}
                           </span>
                         )}
@@ -374,73 +498,83 @@ const ChatSystem: React.FC = () => {
         </div>
       </div>
 
+      {/* Overlay for mobile sidebar */}
+      {isMobile && showSidebar && !selectedChat && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-10"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col ${isMobile ? 'pt-16' : ''}`}>
         {selectedChatData ? (
           <>
-            {/* Chat Header */}
-            <div className="bg-slate-800 dark:bg-slate-800 light:bg-white border-b border-slate-700 dark:border-slate-700 light:border-gray-200 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    {selectedChatData.type === 'direct' ? (
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-medium">
-                          {selectedChatData.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 bg-slate-600 dark:bg-slate-600 light:bg-gray-300 rounded-lg flex items-center justify-center">
-                        {React.createElement(getChatIcon(selectedChatData), { 
-                          className: "w-5 h-5 text-slate-300 dark:text-slate-300 light:text-gray-600" 
-                        })}
-                      </div>
-                    )}
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${getChatStatusColor(selectedChatData)} rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white`}></div>
+            {/* Desktop Chat Header */}
+            {!isMobile && (
+              <div className="bg-slate-800 dark:bg-slate-800 light:bg-white border-b border-slate-700 dark:border-slate-700 light:border-gray-200 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      {selectedChatData.type === 'direct' ? (
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                          <span className="text-white font-medium">
+                            {selectedChatData.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 bg-slate-600 dark:bg-slate-600 light:bg-gray-300 rounded-lg flex items-center justify-center">
+                          {React.createElement(getChatIcon(selectedChatData), { 
+                            className: "w-5 h-5 text-slate-300 dark:text-slate-300 light:text-gray-600" 
+                          })}
+                        </div>
+                      )}
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${getChatStatusColor(selectedChatData)} rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white`}></div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-semibold text-white dark:text-white light:text-gray-900">
+                        {selectedChatData.type === 'direct' 
+                          ? (() => {
+                              const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
+                              return otherUser?.name || selectedChatData.name;
+                            })()
+                          : selectedChatData.name
+                        }
+                      </h3>
+                      <p className="text-sm text-slate-400 dark:text-slate-400 light:text-gray-500">
+                        {selectedChatData.type === 'direct' 
+                          ? (() => {
+                              const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
+                              const isOnline = otherUser && (onlineUsers.includes(otherUser.id) || onlineUsers.includes(otherUser._id));
+                              return `${otherUser?.role} • ${isOnline ? 'Online' : 'Offline'}`;
+                            })()
+                          : `${selectedChatData.participants.length} members • ${onlineUsers.filter(id => selectedChatData.participants.some(p => p.id === id || p._id === id)).length} online`
+                        }
+                      </p>
+                    </div>
                   </div>
                   
-                  <div>
-                    <h3 className="font-semibold text-white dark:text-white light:text-gray-900">
-                      {selectedChatData.type === 'direct' 
-                        ? (() => {
-                            const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
-                            return otherUser?.name || selectedChatData.name;
-                          })()
-                        : selectedChatData.name
-                      }
-                    </h3>
-                    <p className="text-sm text-slate-400 dark:text-slate-400 light:text-gray-500">
-                      {selectedChatData.type === 'direct' 
-                        ? (() => {
-                            const otherUser = selectedChatData.participants.find(p => (p.id || p._id) !== currentUser?._id && (p.id || p._id) !== currentUser?.id);
-                            const isOnline = otherUser && (onlineUsers.includes(otherUser.id) || onlineUsers.includes(otherUser._id));
-                            return `${otherUser?.role} • ${isOnline ? 'Online' : 'Offline'}`;
-                          })()
-                        : `${selectedChatData.participants.length} members • ${onlineUsers.filter(id => selectedChatData.participants.some(p => p.id === id || p._id === id)).length} online`
-                      }
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <button className="p-2 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors">
+                      <Phone className="w-4 h-4" />
+                    </button>
+                    <button className="p-2 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors">
+                      <Video className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => setShowChatInfo(!showChatInfo)}
+                      className="p-2 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <button className="p-2 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors">
-                    <Phone className="w-4 h-4" />
-                  </button>
-                  <button className="p-2 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors">
-                    <Video className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => setShowChatInfo(!showChatInfo)}
-                    className="p-2 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
-            </div>
+            )}
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isMobile ? 'pb-20' : ''}`}>
               {chatMessages.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -451,7 +585,7 @@ const ChatSystem: React.FC = () => {
                   <h3 className="text-lg font-semibold text-white dark:text-white light:text-gray-900 mb-2">
                     Start the conversation
                   </h3>
-                  <p className="text-slate-400 dark:text-slate-400 light:text-gray-500">
+                  <p className="text-slate-400 dark:text-slate-400 light:text-gray-500 px-4">
                     Send a message to begin chatting with {selectedChatData.name}
                   </p>
                 </div>
@@ -467,31 +601,7 @@ const ChatSystem: React.FC = () => {
                     );
                     
                     return (
-                      <div 
-                        key={msg.id}
-                        ref={(el) => {
-                          if (el && !isOwn && !msg.readBy.includes(currentUser?._id || currentUser?.id)) {
-                            const observer = new IntersectionObserver(
-                              (entries) => {
-                                entries.forEach((entry) => {
-                                  if (entry.isIntersecting) {
-                                    const { socket } = useChatStore.getState();
-                                    if (socket && socket.connected) {
-                                      socket.emit('mark_message_read', { 
-                                        chatId: selectedChat, 
-                                        messageId: msg.id 
-                                      });
-                                    }
-                                    observer.disconnect();
-                                  }
-                                });
-                              },
-                              { threshold: 0.5 }
-                            );
-                            observer.observe(el);
-                          }
-                        }}
-                      >
+                      <div key={msg.id}>
                         {showDate && (
                           <div className="text-center my-4">
                             <span className="bg-slate-700 dark:bg-slate-700 light:bg-gray-200 text-slate-300 dark:text-slate-300 light:text-gray-600 px-3 py-1 rounded-full text-xs">
@@ -502,34 +612,34 @@ const ChatSystem: React.FC = () => {
                         
                         <div className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                           {!isOwn && (
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className={`${isMobile ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0`}>
                               {showAvatar ? (
                                 <span className="text-white font-medium text-xs">
                                   {msg.senderName.charAt(0).toUpperCase()}
                                 </span>
                               ) : (
-                                <div className="w-8 h-8"></div>
+                                <div className={`${isMobile ? 'w-10 h-10' : 'w-8 h-8'}`}></div>
                               )}
                             </div>
                           )}
                           
-                          <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
+                          <div className={`${isMobile ? 'max-w-[280px]' : 'max-w-xs lg:max-w-md'} ${isOwn ? 'order-1' : ''}`}>
                             {!isOwn && showAvatar && (
                               <p className="text-xs text-slate-400 dark:text-slate-400 light:text-gray-500 mb-1 ml-1">
                                 {msg.senderName}
                               </p>
                             )}
                             
-                            <div className={`rounded-2xl px-4 py-2 ${
+                            <div className={`rounded-2xl px-4 py-3 ${
                               isOwn 
                                 ? 'bg-red-500 text-white' 
                                 : 'bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-white dark:text-white light:text-gray-900'
                             }`}>
                               {msg.type === 'file' ? (
                                 <div className="flex items-center gap-2">
-                                  <File className="w-4 h-4" />
-                                  <span className="text-sm">{msg.content}</span>
-                                  <button className="p-1 hover:bg-black/10 rounded">
+                                  <File className="w-4 h-4 flex-shrink-0" />
+                                  <span className="text-sm flex-1 truncate">{msg.content}</span>
+                                  <button className="p-1 hover:bg-black/10 rounded flex-shrink-0">
                                     <Download className="w-3 h-3" />
                                   </button>
                                 </div>
@@ -542,7 +652,7 @@ const ChatSystem: React.FC = () => {
                                   />
                                 </div>
                               ) : (
-                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                <p className={`${isMobile ? 'text-sm' : 'text-sm'} whitespace-pre-wrap break-words`}>{msg.content}</p>
                               )}
                             </div>
                             
@@ -561,7 +671,9 @@ const ChatSystem: React.FC = () => {
             </div>
 
             {/* Message Input */}
-            <div className="bg-slate-800 dark:bg-slate-800 light:bg-white border-t border-slate-700 dark:border-slate-700 light:border-gray-200 p-4">
+            <div className={`bg-slate-800 dark:bg-slate-800 light:bg-white border-t border-slate-700 dark:border-slate-700 light:border-gray-200 p-4 ${
+              isMobile ? 'fixed bottom-0 left-0 right-0 z-10' : ''
+            }`}>
               <div className="flex items-end gap-3">
                 <div className="flex-1 relative">
                   <textarea
@@ -570,22 +682,28 @@ const ChatSystem: React.FC = () => {
                     onKeyPress={handleKeyPress}
                     placeholder="Type a message..."
                     rows={1}
-                    className="w-full bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg px-4 py-3 pr-20 text-white dark:text-white light:text-gray-900 placeholder-slate-400 dark:placeholder-slate-400 light:placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 resize-none"
-                    style={{ minHeight: '44px', maxHeight: '120px' }}
+                    className={`w-full bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg px-4 py-3 pr-20 text-white dark:text-white light:text-gray-900 placeholder-slate-400 dark:placeholder-slate-400 light:placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 resize-none ${
+                      isMobile ? 'text-base' : 'text-sm'
+                    }`}
+                    style={{ minHeight: isMobile ? '48px' : '44px', maxHeight: '120px' }}
                   />
                   
                   <div className="absolute right-2 bottom-2 flex items-center gap-1">
                     <button
                       onClick={() => setShowFileUpload(true)}
-                      className="p-1.5 rounded-lg text-slate-400 dark:text-slate-400 light:text-gray-500 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors"
+                      className={`p-1.5 rounded-lg text-slate-400 dark:text-slate-400 light:text-gray-500 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors ${
+                        isMobile ? 'p-2' : 'p-1.5'
+                      }`}
                     >
-                      <Paperclip className="w-4 h-4" />
+                      <Paperclip className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                     </button>
                     <button
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="p-1.5 rounded-lg text-slate-400 dark:text-slate-400 light:text-gray-500 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors"
+                      className={`p-1.5 rounded-lg text-slate-400 dark:text-slate-400 light:text-gray-500 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors ${
+                        isMobile ? 'p-2' : 'p-1.5'
+                      }`}
                     >
-                      <Smile className="w-4 h-4" />
+                      <Smile className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                     </button>
                   </div>
                 </div>
@@ -593,22 +711,24 @@ const ChatSystem: React.FC = () => {
                 <button
                   onClick={handleSendMessage}
                   disabled={!message.trim()}
-                  className="p-3 bg-red-500 hover:bg-red-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  className={`bg-red-500 hover:bg-red-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors ${
+                    isMobile ? 'p-3.5' : 'p-3'
+                  }`}
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                 </button>
               </div>
               
               {/* Emoji Picker */}
               {showEmojiPicker && (
-                <div className="absolute bottom-20 right-4 z-50">
+                <div className={`absolute ${isMobile ? 'bottom-20 right-4' : 'bottom-20 right-4'} z-50`}>
                   <EmojiPicker onEmojiSelect={handleEmojiSelect} onClose={() => setShowEmojiPicker(false)} />
                 </div>
               )}
               
               {/* File Upload */}
               {showFileUpload && (
-                <div className="absolute bottom-20 right-4 z-50">
+                <div className={`absolute ${isMobile ? 'bottom-20 right-4' : 'bottom-20 right-4'} z-50`}>
                   <FileUpload onFileSelect={handleFileUpload} onClose={() => setShowFileUpload(false)} />
                 </div>
               )}
@@ -616,12 +736,12 @@ const ChatSystem: React.FC = () => {
           </>
         ) : (
           /* No Chat Selected */
-          <div className="flex-1 flex items-center justify-center bg-slate-900 dark:bg-slate-900 light:bg-gray-50">
-            <div className="text-center">
+          <div className="flex-1 flex items-center justify-center bg-slate-900 dark:bg-slate-900 light:bg-gray-50 p-4">
+            <div className="text-center max-w-sm">
               <div className="w-20 h-20 bg-slate-700 dark:bg-slate-700 light:bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-10 h-10 text-slate-400 dark:text-slate-400 light:text-gray-500" />
               </div>
-              <h3 className="text-xl font-semibold text-white dark:text-white light:text-gray-900 mb-2">
+              <h3 className={`${isMobile ? 'text-xl' : 'text-xl'} font-semibold text-white dark:text-white light:text-gray-900 mb-2`}>
                 Welcome to Chat!
               </h3>
               <p className="text-slate-400 dark:text-slate-400 light:text-gray-500 mb-6">
@@ -641,26 +761,48 @@ const ChatSystem: React.FC = () => {
 
       {/* Chat Info Sidebar */}
       {showChatInfo && selectedChatData && (
-        <div className="w-80 bg-slate-800 dark:bg-slate-800 light:bg-white border-l border-slate-700 dark:border-slate-700 light:border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white dark:text-white light:text-gray-900">Chat Info</h3>
-            <button
-              onClick={() => setShowChatInfo(false)}
-              className="p-1 rounded text-slate-400 dark:text-slate-400 light:text-gray-500 hover:text-white dark:hover:text-white light:hover:text-gray-900"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+        <div className={`${
+          isMobile 
+            ? 'fixed inset-y-0 right-0 z-30 w-full bg-slate-800 dark:bg-slate-800 light:bg-white pt-16'
+            : 'w-80 bg-slate-800 dark:bg-slate-800 light:bg-white'
+        } border-l border-slate-700 dark:border-slate-700 light:border-gray-200 p-4 overflow-y-auto`}>
+          
+          {/* Mobile header for chat info */}
+          {isMobile && (
+            <div className="flex items-center justify-between mb-6 -mt-4 pt-4 border-b border-slate-700 dark:border-slate-700 light:border-gray-200 pb-4">
+              <button
+                onClick={() => setShowChatInfo(false)}
+                className="p-2 -ml-2 rounded-lg text-slate-300 dark:text-slate-300 light:text-gray-600 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h3 className="text-lg font-semibold text-white dark:text-white light:text-gray-900">Chat Info</h3>
+              <div className="w-9"></div>
+            </div>
+          )}
+
+          {/* Desktop header for chat info */}
+          {!isMobile && (
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-white dark:text-white light:text-gray-900">Chat Info</h3>
+              <button
+                onClick={() => setShowChatInfo(false)}
+                className="p-1 rounded text-slate-400 dark:text-slate-400 light:text-gray-500 hover:text-white dark:hover:text-white light:hover:text-gray-900"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           
           <div className="space-y-6">
             {/* Chat Details */}
             <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                <span className="text-white font-bold text-xl">
+              <div className={`${isMobile ? 'w-24 h-24' : 'w-20 h-20'} bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3`}>
+                <span className={`text-white font-bold ${isMobile ? 'text-2xl' : 'text-xl'}`}>
                   {selectedChatData.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <h4 className="text-lg font-semibold text-white dark:text-white light:text-gray-900">
+              <h4 className={`${isMobile ? 'text-xl' : 'text-lg'} font-semibold text-white dark:text-white light:text-gray-900`}>
                 {selectedChatData.name}
               </h4>
               <p className="text-slate-400 dark:text-slate-400 light:text-gray-500 text-sm">
@@ -670,7 +812,7 @@ const ChatSystem: React.FC = () => {
             
             {/* Participants */}
             <div>
-              <h5 className="text-sm font-medium text-white dark:text-white light:text-gray-900 mb-3">
+              <h5 className={`${isMobile ? 'text-base' : 'text-sm'} font-medium text-white dark:text-white light:text-gray-900 mb-3`}>
                 Participants ({selectedChatData.participants.length})
               </h5>
               <div className="space-y-2">
@@ -679,28 +821,30 @@ const ChatSystem: React.FC = () => {
                   const isOnline = onlineUsers.includes(participant.id) || onlineUsers.includes(participant._id);
                   
                   return (
-                    <div key={participant.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100">
+                    <div key={participant.id} className={`flex items-center gap-3 p-3 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100 ${
+                      isMobile ? 'p-4' : 'p-2'
+                    }`}>
                       <div className="relative">
-                        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                        <div className={`${isMobile ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center`}>
                           <span className="text-white font-medium text-xs">
                             {participant.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         {isOnline && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white"></div>
+                          <div className={`absolute -bottom-0.5 -right-0.5 ${isMobile ? 'w-4 h-4' : 'w-3 h-3'} bg-green-400 rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white`}></div>
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-white dark:text-white light:text-gray-900">
+                        <p className={`${isMobile ? 'text-base' : 'text-sm'} font-medium text-white dark:text-white light:text-gray-900`}>
                           {participant.name}
                           {(participant.id === currentUser?._id || participant.id === currentUser?.id) && ' (You)'}
                         </p>
-                        <p className="text-xs text-slate-400 dark:text-slate-400 light:text-gray-500">
+                        <p className={`${isMobile ? 'text-sm' : 'text-xs'} text-slate-400 dark:text-slate-400 light:text-gray-500`}>
                           {participant.role} • {isOnline ? 'Online' : 'Offline'}
                         </p>
                       </div>
                       <div className={getRoleColor(participant.role)}>
-                        <RoleIcon className="w-4 h-4" />
+                        <RoleIcon className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                       </div>
                     </div>
                   );
@@ -709,15 +853,19 @@ const ChatSystem: React.FC = () => {
             </div>
             
             {/* Actions */}
-            <div className="space-y-2">
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-white dark:text-white light:text-gray-900 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors">
-                <Settings className="w-4 h-4" />
-                Chat Settings
+            <div className="space-y-3">
+              <button className={`w-full flex items-center gap-3 rounded-lg bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-white dark:text-white light:text-gray-900 hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors ${
+                isMobile ? 'p-4' : 'p-3'
+              }`}>
+                <Settings className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                <span className={isMobile ? 'text-base' : 'text-sm'}>Chat Settings</span>
               </button>
               {selectedChatData.type !== 'direct' && (
-                <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
-                  <X className="w-4 h-4" />
-                  Leave Chat
+                <button className={`w-full flex items-center gap-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors ${
+                  isMobile ? 'p-4' : 'p-3'
+                }`}>
+                  <X className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                  <span className={isMobile ? 'text-base' : 'text-sm'}>Leave Chat</span>
                 </button>
               )}
             </div>
@@ -728,45 +876,47 @@ const ChatSystem: React.FC = () => {
       {/* New Chat Modal */}
       {showNewChatModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl border border-slate-700 dark:border-slate-700 light:border-gray-200 w-full max-w-md">
-            <div className="p-6">
+          <div className={`bg-slate-800 dark:bg-slate-800 light:bg-white rounded-xl border border-slate-700 dark:border-slate-700 light:border-gray-200 w-full ${
+            isMobile ? 'max-w-sm max-h-[90vh] overflow-y-auto' : 'max-w-md'
+          }`}>
+            <div className={`${isMobile ? 'p-4' : 'p-6'}`}>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white dark:text-white light:text-gray-900">Start New Chat</h3>
+                <h3 className={`${isMobile ? 'text-lg' : 'text-lg'} font-semibold text-white dark:text-white light:text-gray-900`}>Start New Chat</h3>
                 <button
                   onClick={() => setShowNewChatModal(false)}
                   className="p-1 rounded text-slate-400 dark:text-slate-400 light:text-gray-500 hover:text-white dark:hover:text-white light:hover:text-gray-900"
                 >
-                  <X className="w-4 h-4" />
+                  <X className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                 </button>
               </div>
 
               {/* Chat Type Selection */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-white dark:text-white light:text-gray-900 mb-2">
+                <label className={`block ${isMobile ? 'text-base' : 'text-sm'} font-medium text-white dark:text-white light:text-gray-900 mb-2`}>
                   Chat Type
                 </label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setNewChatType('direct')}
-                    className={`flex-1 p-3 rounded-lg border transition-colors ${
+                    className={`flex-1 ${isMobile ? 'p-4' : 'p-3'} rounded-lg border transition-colors ${
                       newChatType === 'direct'
                         ? 'bg-red-500 border-red-500 text-white'
                         : 'bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border-slate-600 dark:border-slate-600 light:border-gray-200 text-white dark:text-white light:text-gray-900'
                     }`}
                   >
-                    <User className="w-4 h-4 mx-auto mb-1" />
-                    <span className="text-sm">Direct</span>
+                    <User className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} mx-auto mb-1`} />
+                    <span className={`${isMobile ? 'text-sm' : 'text-sm'}`}>Direct</span>
                   </button>
                   <button
                     onClick={() => setNewChatType('group')}
-                    className={`flex-1 p-3 rounded-lg border transition-colors ${
+                    className={`flex-1 ${isMobile ? 'p-4' : 'p-3'} rounded-lg border transition-colors ${
                       newChatType === 'group'
                         ? 'bg-red-500 border-red-500 text-white'
                         : 'bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border-slate-600 dark:border-slate-600 light:border-gray-200 text-white dark:text-white light:text-gray-900'
                     }`}
                   >
-                    <Users className="w-4 h-4 mx-auto mb-1" />
-                    <span className="text-sm">Group</span>
+                    <Users className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} mx-auto mb-1`} />
+                    <span className={`${isMobile ? 'text-sm' : 'text-sm'}`}>Group</span>
                   </button>
                 </div>
               </div>
@@ -774,7 +924,7 @@ const ChatSystem: React.FC = () => {
               {/* Group Name (only for group chats) */}
               {newChatType === 'group' && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-white dark:text-white light:text-gray-900 mb-2">
+                  <label className={`block ${isMobile ? 'text-base' : 'text-sm'} font-medium text-white dark:text-white light:text-gray-900 mb-2`}>
                     Group Name
                   </label>
                   <input
@@ -782,17 +932,19 @@ const ChatSystem: React.FC = () => {
                     value={newChatName}
                     onChange={(e) => setNewChatName(e.target.value)}
                     placeholder="Enter group name"
-                    className="w-full bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg px-4 py-3 text-white dark:text-white light:text-gray-900 placeholder-slate-400 dark:placeholder-slate-400 light:placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                    className={`w-full bg-slate-700 dark:bg-slate-700 light:bg-gray-100 border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg px-4 text-white dark:text-white light:text-gray-900 placeholder-slate-400 dark:placeholder-slate-400 light:placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 ${
+                      isMobile ? 'py-3 text-base' : 'py-3 text-sm'
+                    }`}
                   />
                 </div>
               )}
 
               {/* User Selection */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-white dark:text-white light:text-gray-900 mb-2">
+                <label className={`block ${isMobile ? 'text-base' : 'text-sm'} font-medium text-white dark:text-white light:text-gray-900 mb-2`}>
                   Select Users ({selectedUsers.length} selected)
                 </label>
-                <div className="max-h-48 overflow-y-auto border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg">
+                <div className={`${isMobile ? 'max-h-60' : 'max-h-48'} overflow-y-auto border border-slate-600 dark:border-slate-600 light:border-gray-200 rounded-lg`}>
                   {availableUsersForChat.map((user) => {
                     const isSelected = selectedUsers.includes(user.id);
                     const RoleIcon = getRoleIcon(user.role);
@@ -801,7 +953,9 @@ const ChatSystem: React.FC = () => {
                     return (
                       <label
                         key={user.id}
-                        className="flex items-center gap-3 p-3 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100 cursor-pointer"
+                        className={`flex items-center gap-3 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-gray-100 cursor-pointer ${
+                          isMobile ? 'p-4' : 'p-3'
+                        }`}
                       >
                         <input
                           type="checkbox"
@@ -818,28 +972,28 @@ const ChatSystem: React.FC = () => {
                             }
                           }}
                           disabled={newChatType === 'direct' && selectedUsers.length > 0 && !isSelected}
-                          className="w-4 h-4 text-red-500 bg-slate-600 border-slate-500 rounded focus:ring-red-500 focus:ring-2"
+                          className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} text-red-500 bg-slate-600 border-slate-500 rounded focus:ring-red-500 focus:ring-2`}
                         />
                         <div className="relative">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                          <div className={`${isMobile ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center`}>
                             <span className="text-white font-medium text-xs">
                               {user.name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           {isOnline && (
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white"></div>
+                            <div className={`absolute -bottom-0.5 -right-0.5 ${isMobile ? 'w-4 h-4' : 'w-3 h-3'} bg-green-400 rounded-full border-2 border-slate-800 dark:border-slate-800 light:border-white`}></div>
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-white dark:text-white light:text-gray-900">
+                          <p className={`${isMobile ? 'text-base' : 'text-sm'} font-medium text-white dark:text-white light:text-gray-900`}>
                             {user.name}
                           </p>
-                          <p className="text-xs text-slate-400 dark:text-slate-400 light:text-gray-500">
+                          <p className={`${isMobile ? 'text-sm' : 'text-xs'} text-slate-400 dark:text-slate-400 light:text-gray-500`}>
                             {user.role} • {isOnline ? 'Online' : 'Offline'}
                           </p>
                         </div>
                         <div className={getRoleColor(user.role)}>
-                          <RoleIcon className="w-4 h-4" />
+                          <RoleIcon className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
                         </div>
                       </label>
                     );
@@ -848,17 +1002,21 @@ const ChatSystem: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3">
+              <div className={`flex gap-3 ${isMobile ? 'flex-col' : 'flex-row'}`}>
                 <button
                   onClick={() => setShowNewChatModal(false)}
-                  className="flex-1 px-4 py-2 bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-white dark:text-white light:text-gray-900 rounded-lg hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors"
+                  className={`${isMobile ? 'w-full' : 'flex-1'} px-4 py-3 bg-slate-700 dark:bg-slate-700 light:bg-gray-100 text-white dark:text-white light:text-gray-900 rounded-lg hover:bg-slate-600 dark:hover:bg-slate-600 light:hover:bg-gray-200 transition-colors ${
+                    isMobile ? 'text-base' : 'text-sm'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateNewChat}
                   disabled={selectedUsers.length === 0}
-                  className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  className={`${isMobile ? 'w-full' : 'flex-1'} px-4 py-3 bg-red-500 hover:bg-red-600 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors ${
+                    isMobile ? 'text-base' : 'text-sm'
+                  }`}
                 >
                   Create Chat
                 </button>
